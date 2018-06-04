@@ -2,9 +2,16 @@ package utils;
 
 import gameModes.GameMode;
 import gameModes.InfinityMode;
+import system.Audio;
+import system.Audio.Tracks;
 
 public class GameManagementUtils implements ConstantValues
 {
+	public static enum GameStatus
+	{
+		IN_GAME, PRE_ROUND, POST_ROUND, WIN, LOSE, BIG_WIN, AWAITING_RESPAWN;
+	}
+	
 	private byte roundsBetweenBoss = 3;
 	private byte startingLives = 3;
 	private short alienSteps = 16;
@@ -13,11 +20,6 @@ public class GameManagementUtils implements ConstantValues
 	
 	private byte gameType = 0;//0 = story, 1 = infinity mode
 	private GameMode game;
-	
-	private byte roundType = 0;//0 = normal alien pack; 1 = boss alien
-	
-	private short endCode = 0;//0 = in-game; 1 = win; 2= lose; 3 = awaiting respawn
-	private boolean inGame = false;
 
 	public void startGame(byte gameType, byte[] b_mods, float[] f_mods)
 	{
@@ -31,6 +33,7 @@ public class GameManagementUtils implements ConstantValues
 		switch(this.gameType)
 		{
 			case 1://Infinity Mode
+				Audio.openClips(new Tracks[] {Tracks.BGM1, Tracks.BGM3, Tracks.BossBGM1, Tracks.Victory1, Tracks.Victory2});
 				game = new InfinityMode();
 				game.startGame();
 				break;
@@ -67,33 +70,13 @@ public class GameManagementUtils implements ConstantValues
 		return wpnCoolMod;
 	}
 	
-	public void setInGame(boolean inGame)
-	{
-		this.inGame = inGame;
-	}
-	
 	public boolean getInGame()
 	{
-		return inGame;
+		return game.getInGame();
 	}
 
-	public byte getRoundType()
+	public GameStatus getGameStatus()
 	{
-		return roundType;
-	}
-
-	public void setRoundType(byte roundType)
-	{
-		this.roundType = roundType;
-	}
-
-	public short getEndCode()
-	{
-		return endCode;
-	}
-
-	public void setEndCode(short endCode)
-	{
-		this.endCode = endCode;
+		return (game == null) ? GameStatus.IN_GAME : game.getStatus();
 	}
 }

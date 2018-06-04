@@ -1,33 +1,18 @@
 package utils;
 
-import javax.swing.DebugGraphics;
-
 import core.Renderer;
-import io.Background;
 import io.DebugPrints;
-import io.FontManagement;
-import io.MainMenu;
-import system.Audio;
+import menus.MainMenu;
+import spaceBackgrounds.Background;
 
 public final class ObjectCollection
 {
-	private static Audio audio;
 	private static Background background;
 	private static DebugPrints debugPrints;
 	private static EntityManagement entityManagement;
-	private static FontManagement fontManagement;
 	private static GameManagementUtils gameManagement;
 	private static MainMenu mainMenu;
 	private static Renderer renderer;
-	
-	public static Audio getAudio()
-	{
-		if(audio == null)
-		{
-			audio = new Audio();
-		}
-		return audio;
-	}
 	
 	public static Background getBackground()
 	{
@@ -54,15 +39,6 @@ public final class ObjectCollection
 			entityManagement = new EntityManagement();
 		}	
 		return entityManagement;
-	}
-	
-	public static FontManagement getFontManagement()
-	{
-		if(fontManagement == null)
-		{
-			fontManagement = new FontManagement();
-		}
-		return fontManagement;
 	}
 	
 	public static GameManagementUtils getGameManagement()

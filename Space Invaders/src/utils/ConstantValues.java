@@ -15,16 +15,6 @@ public interface ConstantValues
 	final short SPACE_MINE_COUNT = 2;
 	final short SHOCKWAVE_SPRITE_COUNT = 2;
 	
-	//[START] --- AUDIO STRINGS --- \\
-	
-	//Background Music
-	enum TrackNames {BGM1_INTRO, BGM1_LOOP, BGM2_INTRO, BGM2_LOOP, BIGWIN1_INTRO, BIGWIN1_LOOP, BIGWIN2_INTRO, BIGWIN2_LOOP, BOSSBGM1, LOSE};
-	
-	//Sound Effects
-	enum SfxNames {BEEP1, ENEMYSHOOT, FRIENDLYSHOOT, GUNOVERHEAT, HIT, MENUBADSELECT, MENUMOVEMENT, SEISMICBOOM, SHIELDRICOCHET};
-	
-	//[END] --- AUDIO STRINGS --- \\
-	
 	//[START] --- SPRITE STRINGS --- \\
 	final String ALIENSPRITESHEET1 = "sprites/alienSpriteSheet1.png";
 	final String BLUESHIELD = "sprites/blueShield.png";
@@ -39,7 +29,10 @@ public interface ConstantValues
 	final String SHIELDHIT = "sprites/shieldHit.png";
 	final String SHIPSPRITESHEET1 = "sprites/shipSpriteSheet1.png";
 	final String SHOCKWAVESHEET = "sprites/shockwaveSheet.png";
-	final String SPACEBG1 = "sprites/spaceBG1.png";
 	final String SPACEMINESHEET = "sprites/spaceMineSheet.png";
 	//[END] --- SPRITE STRINGS --- \\
+	
+	//[START] --- IMAGES --- \\
+	final String SPACEBG1 = "images/spaceBG1.png";
+	final String DIALOGUE_BOX = "images/dialogue_box.png";
 }

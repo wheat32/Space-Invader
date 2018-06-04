@@ -1,7 +1,6 @@
 package core;
 
 import java.awt.Canvas;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
@@ -13,51 +12,53 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferStrategy;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 
 import javax.swing.JFrame;
 import javax.swing.Timer;
 
-import bosses.BossAlien;
-import enemies.MarchingAlien;
-import miscEntities.Wall;
-import players.SpaceShip;
+import entities.Entity;
+import input.KeyInputManagement;
+import io.FontManagement;
+import system.Audio;
 import system.Options;
+import system.Time;
+import updates.EarlyUpdateListener;
+import updates.GraphicsListener;
+import updates.UpdateListener;
 import utils.ConstantValues;
-import utils.FrameListener;
-import utils.GraphicsListener;
-import utils.KeyInputManagement;
 import utils.ObjectCollection;
-import utils.Stats;
 
 public class Renderer extends JFrame implements ComponentListener, ConstantValues, KeyListener, MouseListener
 {
 	private static final long serialVersionUID = 1L;
 	
 	private Timer timer;
-	private long timeStamp = System.currentTimeMillis();
-	private int elapsedTime = 0;
-	private ArrayList<FrameListener> frameListeners = new ArrayList<FrameListener>();
-	private ArrayList<GraphicsListener> graphicsListeners = new ArrayList<GraphicsListener>();
+	
+	private ArrayList<EarlyUpdateListener> earlyUpdateListeners = new ArrayList<EarlyUpdateListener>();
+	private ArrayList<UpdateListener> updateListeners = new ArrayList<UpdateListener>();
+	/***
+	 * <i>The first value in the Entry is the render layer.</i>
+	 */
+	private ArrayList<AbstractMap.SimpleEntry<Byte, GraphicsListener>> graphicsListeners = new ArrayList<>();
+	private boolean resized = false;
 	
 	private Canvas canvas;
 	
 	public Renderer()
 	{
 		super("Space Invader");
-		super.setMinimumSize(new Dimension(640, 480));
 		super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		super.setIgnoreRepaint(true);
 		canvas = new Canvas();
-		
-		System.out.println(Options.SCREEN_WIDTH + "x" + Options.SCREEN_HEIGHT);
-		//canvas.setSize(new Dimension(Options.SCREEN_WIDTH, Options.SCREEN_HEIGHT));
-		canvas.setSize(new Dimension(980, 780));
+		super.setMinimumSize(new Dimension(640, 480));
+		canvas.setPreferredSize(new Dimension(Options.SCREEN_WIDTH, Options.SCREEN_HEIGHT));
 		super.add(canvas);
+		super.setIgnoreRepaint(true);
 		super.pack();
-		canvas.createBufferStrategy(2);
 		
+		canvas.createBufferStrategy(2);
 		super.setVisible(true);
 		super.addComponentListener(this);
 		super.addKeyListener(this);
@@ -66,16 +67,17 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 	
 	public void start()
 	{
-		ObjectCollection.getAudio().returnFocus();
-		timeStamp = System.currentTimeMillis();
+		Audio.returnFocus();
 		
 		timer = new Timer(1000/30, new ActionListener()
 		{
 			@Override
-			public void actionPerformed(ActionEvent e)//TODO can make optimizations from here
+			public void actionPerformed(ActionEvent e)
 			{
+				makeEarlyUpdateCalls();
+				makeUpdateCalls();
 				render();
-				makeFrameCalls();
+				//makeLateUpdateCalls();//TODO
 			}
 		});
 		timer.start();
@@ -83,7 +85,7 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 	
 	public void stop()
 	{
-		ObjectCollection.getAudio().outOfFocus();
+		Audio.outOfFocus();
 		timer.stop();
 	}
 	
@@ -93,52 +95,27 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 		BufferStrategy strategy = canvas.getBufferStrategy();
 		Graphics2D gfx = (Graphics2D) strategy.getDrawGraphics();
 		
-		requestFocus();
-		
-		elapsedTime = (int) (System.currentTimeMillis() - timeStamp);
-		
-		gfx.setColor(Color.BLACK);
-		gfx.fillRect(0, 0, Stats.SCREEN_WIDTH, Stats.SCREEN_HEIGHT);
-		
-		ObjectCollection.getBackground().displayBackground(gfx, elapsedTime);		
+		gfx.clearRect(0, 0, Options.SCREEN_WIDTH, Options.SCREEN_HEIGHT);
 		//[END] ----- Required Code ----- \\
+		
+		boolean syncResized = resized;//Evade threading issues
+		
+		for(int i = 0; i < graphicsListeners.size(); i++)
+		{
+			graphicsListeners.get(i).getValue().graphicsCall(gfx, syncResized);
+		}
 		
 		for(int i = 0; i < ObjectCollection.getEntityManagement().getEntitiesSize(); i++) 
 		{
 			Entity e = ObjectCollection.getEntityManagement().getEntity(i);
 			
-			//Skip the Wall
-			if(e instanceof Wall == true)
-			{
-				continue;
-			}
-			
-			e.draw(gfx, elapsedTime);
+			//Draw the entity
+			e.getSprite().drawImage(gfx, e.getBounds(), e.getActive());
 
-			if(ObjectCollection.getGameManagement().getInGame() == true) 
+			if(ObjectCollection.getGameManagement().getInGame() == false	) 
 			{
-				//Specific type checks
-				if(e instanceof SpaceShip == true)
-				{
-					((SpaceShip) e).processKeys();
-				}
-				
-				if(e instanceof MarchingAlien == false)
-				{
-					e.move(elapsedTime);
-				}
-			}
-			else
-			{
-				if(e instanceof BossAlien)
-				{
-					e.move(0);
-				}
-				else
-				{
-					e.deactivate();
-					continue;
-				}
+				e.deactivate();
+				continue;
 			}
 			
 			//Collision detection
@@ -146,47 +123,40 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 			{
 				Entity e2 = ObjectCollection.getEntityManagement().getEntity(j);
 				
-				//If there is no collision check for whatever e2 is inside of e
-				if(e.inCollision(e2) == false)
-				{
-					e2.inCollision(e);
-					//System.out.println(e.toString() + " is in collision with " + e2.toString());
-				}
+				e.inCollision(e2);
+				e2.inCollision(e);
+				//System.out.println(e.toString() + " is in collision with " + e2.toString());
 			}
 		}
 		
-		makeGraphicsCalls(gfx, elapsedTime);
-		
-		renderCleanUp(gfx, strategy);
-	}
-	
-	private void renderCleanUp(Graphics2D gfx, BufferStrategy strategy)
-	{
+		resized = false;
 		gfx.dispose();
 		strategy.show();
-		timeStamp = System.currentTimeMillis();
 	}
 	
-	public void addFrameListener(FrameListener listener)
+	public void addEarlyUpdateListener(EarlyUpdateListener listener)
 	{
-		frameListeners.add(listener);
-	}
-	
-	public void removeFrameListener(FrameListener listener)
-	{
-		if(frameListeners.remove(listener) == false)
+		if(earlyUpdateListeners.contains(listener) == false)
 		{
-			System.err.println("Error removing object " + listener.toString() + " as a frame listener.");
+			earlyUpdateListeners.add(listener);
 		}
 	}
 	
-	public void makeFrameCalls()
+	public void removeEarlyUpdateListener(EarlyUpdateListener listener)
+	{
+		if(earlyUpdateListeners.remove(listener) == false)
+		{
+			System.err.println("Error removing object " + listener.toString() + " as an early update listener.");
+		}
+	}
+	
+	private void makeEarlyUpdateCalls()
 	{
 		try
 		{
-			for(FrameListener listener : frameListeners)
+			for(EarlyUpdateListener listener : earlyUpdateListeners)
 			{
-				listener.frameCall(elapsedTime);
+				listener.earlyUpdate();
 			}
 		}
 		catch(ConcurrentModificationException e)
@@ -195,25 +165,95 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 		}
 	}
 	
-	public void addGraphicsListener(GraphicsListener listener)
+	public void addUpdateListener(UpdateListener listener)
 	{
-		graphicsListeners.add(listener);
+		if(updateListeners.contains(listener) == false)
+		{
+			updateListeners.add(listener);
+		}
 	}
 	
-	public void removeGraphicsListener(GraphicsListener listener)
+	public void removeUpdateListener(UpdateListener listener)
 	{
-		if(graphicsListeners.remove(listener) == false)
+		if(updateListeners.remove(listener) == false)
+		{
+			System.err.println("Error removing object " + listener.toString() + " as an update listener.");
+		}
+	}
+	
+	private void makeUpdateCalls()
+	{
+		try
+		{
+			for(UpdateListener listener : updateListeners)
+			{
+				listener.update();
+			}
+		}
+		catch(ConcurrentModificationException e)
+		{
+			//Do nothing. Really a trivial exception that occurs when adding an element to an ArrayList while it is being iterated through
+		}
+	}
+	
+	/***
+	 * 
+	 * @param listener
+	 * @param layer (byte) - the layer to be rendered at
+	 */
+	public void addGraphicsListener(GraphicsListener listener, byte layer)
+	{
+		//-1 means it doesn't exist yet
+		if(graphicsListeners.size() == 0 || graphicsListenerIndex(listener) == -1)
+		{
+			for(int i = -1; i < graphicsListeners.size(); i++)
+			{
+				if(i+1 == graphicsListeners.size() || layer < graphicsListeners.get(i+1).getKey())
+				{
+					graphicsListeners.add(i+1, new AbstractMap.SimpleEntry<Byte, GraphicsListener>(layer, listener));
+				}
+			}
+		}
+	}
+	
+	public boolean removeGraphicsListener(GraphicsListener listener)
+	{
+		if(graphicsListeners.remove(graphicsListeners.get(graphicsListenerIndex(listener))) == false)
 		{
 			System.err.println("Error removing object " + listener.toString() + " as a graphics listener.");
+			return false;
 		}
+		
+		return true;
 	}
 	
-	public void makeGraphicsCalls(Graphics2D gfx, int elapsedTime)
+	/***
+	 * Given the {@link updates.GraphicsListener GraphicsListener}, it will return the index it is in inside of the {@link graphicsListener} {@link ArrayList}.
+	 * @param listener
+	 * @return int - index of the listener in the {@link #graphicsListeners} {@link ArrayList}.
+	 */
+	private int graphicsListenerIndex(GraphicsListener listener)
 	{
-		for(GraphicsListener listener : graphicsListeners)
+		for(int i = 0; i < graphicsListeners.size(); i++)
 		{
-			listener.graphicsCall(gfx, elapsedTime);
+			if(graphicsListeners.get(i).getValue().equals(listener))
+			{
+				return i;
+			}
 		}
+		
+		return -1;
+	}
+	
+	public void changeGraphicsLayer(GraphicsListener listener, byte newLayer)
+	{
+		if(removeGraphicsListener(listener) == false)
+		{
+			throw new RuntimeException("Renderer | Unable to remove GraphicsListener " + listener.toString() + " from graphicsListeners ArrayList when attempting to "
+					+ "change its layer.");
+		}
+		
+		addGraphicsListener(listener, newLayer);
 	}
 	
 	@Override
@@ -221,14 +261,14 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 	{
 		System.out.println("Component Hidden");
 		timer.stop();
-		ObjectCollection.getAudio().outOfFocus();
+		Audio.outOfFocus();
 	}
 	
 	@Override
 	public void componentShown(ComponentEvent e)
 	{
 		timer.start();	
-		timeStamp = System.currentTimeMillis();
+		Time.updateTimestamp();
 	}
 
 	@Override
@@ -240,23 +280,25 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 	@Override
 	public void componentResized(ComponentEvent e)
 	{
-		if(frameListeners.size() == 0)
+		if(updateListeners.size() == 0)
 		{
-			return;//We know this method is being called before everything is initialized
+			return;//This method is being called before everything is initialized. This is to ignore that initial call.
 		}
 		
-		int oldScreenWidth = Stats.SCREEN_WIDTH;
-		int oldScreenHeight = Stats.SCREEN_HEIGHT;
-		Stats.SCREEN_WIDTH = canvas.getWidth();
-		Stats.SCREEN_HEIGHT = canvas.getHeight();
+		resized = true;
+		
+		int oldScreenWidth = Options.SCREEN_WIDTH;
+		int oldScreenHeight = Options.SCREEN_HEIGHT;
+		Options.SCREEN_WIDTH = canvas.getWidth();
+		Options.SCREEN_HEIGHT = canvas.getHeight();
 		
 		for(int i = 0; i < ObjectCollection.getEntityManagement().getEntitiesSize(); i++)
 		{
 			ObjectCollection.getEntityManagement().getEntity(i).resize(oldScreenWidth, oldScreenHeight);
-			ObjectCollection.getEntityManagement().getEntity(i).move(0);
+			ObjectCollection.getEntityManagement().getEntity(i).move();//TODO when move passed elapsedTime, it passed a 0 here
 		}
 		
-		ObjectCollection.getFontManagement().resetFontSizes();
+		FontManagement.resetFontSizes();
 	}
 
 	@Override
@@ -304,7 +346,6 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 	@Override
 	public void mouseReleased(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
-		
+		System.out.println("Mouse released");
 	}
 }

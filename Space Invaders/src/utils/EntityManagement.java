@@ -2,30 +2,44 @@ package utils;
 
 import java.util.ArrayList;
 
-import core.Entity;
+import entities.Entity;
+import entities.players.SpaceShip;
+import input.KeyInputManagement;
 import miscEntities.Wall;
-import players.SpaceShip;
+import updates.UpdateListener;
 
-public class EntityManagement implements ConstantValues
+public class EntityManagement implements ConstantValues, UpdateListener
 {
 	private ArrayList<Entity> entities = new ArrayList<>();
+	private ArrayList<Entity> removalList = new ArrayList<>();
+	
+	public EntityManagement()
+	{
+		ObjectCollection.getRenderer().addUpdateListener(this);
+	}
 	
 	public void addEntity(Entity entity)
 	{
 		entities.add(entity);
-		entity.setVelocity(0, 0);
+	}
+	
+	public void addEntityGroup(ArrayList<Entity> entities)
+	{
+		this.entities.addAll(entities);
 	}
 	
 	public void removeEntity(Entity entity)
 	{
-		if(entity != null && entities.contains(entity) == true)
-		{
-			entities.remove(entity);
-		}
+		removalList.add(entity);
 	}
 	
 	public Entity getEntity(Entity requestedEntity)
 	{
+		if(containsEntity(requestedEntity) == false)
+		{
+			return null;
+		}
+		
 		for(Entity entity : entities)
 		{
 			if(entity.getClass().equals(requestedEntity.getClass()) == true)
@@ -57,37 +71,6 @@ public class EntityManagement implements ConstantValues
 		return (entities.contains(entity)) ? true : false;
 	}
 	
-	public void onEndOfLife(Entity e) 
-	{
-		if(e instanceof SpaceShip == true)
-		{
-			Stats.lives--;
-			requestShipRespawn();
-		}
-		
-		entities.remove(e);
-	}
-	
-	public void requestShipRespawn() 
-	{
-		//entities.remove(objColl.getSpaceShip());//TODO
-		
-		if(Stats.lives == 0)
-		{
-			ObjectCollection.getGameManagement().setEndCode((short) 2);
-			return;
-		}
-		
-		/*if(getEntity(objColl.getBossAlien()) != null)//TODO
-		{
-			objColl.getBossAlien().reset();
-		}*/
-		
-		ObjectCollection.getGameManagement().stopGame();
-		KeyInputManagement.fireKeyPressed = false;
-		ObjectCollection.getGameManagement().setEndCode((short) 3);
-	}
-	
 	public void awaitingRespawn()
 	{
 		//Waiting on user input to start game
@@ -95,7 +78,7 @@ public class EntityManagement implements ConstantValues
 		{
 			shipRespawn();
 			//objColl.getGameManagement().startGame();
-			ObjectCollection.getGameManagement().setEndCode((short) 0);
+			//ObjectCollection.getGameManagement().setEndCode((short) 0);
 		}
 	}
 	
@@ -134,6 +117,21 @@ public class EntityManagement implements ConstantValues
 			if(entity instanceof Wall == true && includeWall == true)
 			{
 				entities.remove(entity);
+			}
+		}
+	}
+
+	@Override
+	public void update()//TODO make this late update
+	{
+		if(removalList.isEmpty() == false)
+		{
+			for(Entity entity : removalList)
+			{
+				if(entity != null && entities.contains(entity) == true)
+				{
+					entities.remove(entity);
+				}
 			}
 		}
 	}

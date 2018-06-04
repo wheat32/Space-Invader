@@ -2,7 +2,7 @@ package system;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashMap;
+import java.util.ArrayList;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -15,103 +15,193 @@ import javax.sound.sampled.LineListener;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-import utils.ConstantValues;
-
-public class Audio implements LineListener, ConstantValues
+public class Audio
 {
-	private Clip BGM;
-	private Clip BGM2;
-	private TrackNames BGMName;
+	private static Clip currIntroClip = null;
+	private static Clip currLoopClip = null;
+	private static ArrayList<Clip> openBGMClips = new ArrayList<Clip>();
 	
-	private boolean outOfFocus = false;
-	private short musicVolume = -80;//anywhere between -80-5 for the volume
-	private short musicVolumeHolder = musicVolume;
-	private short sfxVolume = -10;
+	private volatile static boolean interruptThread = false;
+	private static boolean outOfFocus = false;
+	private static float musicVolume = 0.0f;//anywhere between 0-1 for volume
+	private static float musicVolumeHolder = musicVolume;
+	private static float sfxVolume = 0.86f;
 	
-	private final String[] trackResIDs = {"bgm/bgm1_intro.wav", "bgm/bgm1_loop.wav", "bgm/bgm2_intro.wav", "bgm/bgm2_loop.wav", "bgm/bigWin1_intro.wav",
-			"bgm/bigWin1_loop.wav", "bgm/bigWin2_intro.wav", "bgm/bigWin2_loop.wav", "bgm/bossBGM1.wav", "bgm/lose.wav"};
-	private HashMap<TrackNames, Clip> tracks = new HashMap<TrackNames, Clip>();
-	
-	private final String[] sfxResIDs = {"sfx/beep1.wav", "sfx/enemyShoot.wav", "sfx/friendlyShoot.wav", "sfx/gunOverheat.wav", "sfx/hit.wav",
-			"sfx/menuBadSelect.wav", "sfx/menuMovement.wav", "sfx/seismicBoom.wav", "sfx/shieldRicochet.wav"};
-	private HashMap<SfxNames, Clip> sfxs = new HashMap<SfxNames, Clip>();
-	
-	public Audio()
+	public static enum Tracks
 	{
-		//Open all the clips initially
-		try
+		//Wave music
+		BGM1("bgm/bgm1_intro.wav", "bgm/bgm1_loop.wav"),
+		BGM2("bgm/bgm2_intro.wav", "bgm/bgm2_loop.wav"),//Menu
+		BGM3("bgm/bgm3_intro.wav", "bgm/bgm3_loop.wav"),
+		
+		//Boss music
+		BossBGM1("bgm/bossBGM1.wav", null),
+		
+		//Victory music
+		Victory1("bgm/bigWin1_intro.wav", "bgm/bigWin1_loop.wav"),
+		Victory2("bgm/bigWin2_intro.wav", "bgm/bigWin2_loop.wav"),
+		
+		//Lose music
+		Lose1("bgm/lose.wav", null);
+		
+		public final String introResID;
+		public Clip introClip;
+		public final String loopResID;
+		public Clip loopClip;
+		
+		private Tracks(String introResID, String loopResID)
 		{
-			for(int i = 0; i < TrackNames.values().length; i++)
-			{
-				URL url = this.getClass().getClassLoader().getResource(trackResIDs[i]);
-				AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(url);
-				AudioFormat format = audioInputStream.getFormat();
-				DataLine.Info info = new DataLine.Info(Clip.class, format);
-				
-				if(!AudioSystem.isLineSupported(info))
-				{
-					new LineUnavailableException("Line is not supported!");
-				}
-				
-				Clip clip = (Clip) AudioSystem.getLine(info);
-				clip.open(audioInputStream);
-				FloatControl volume = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-				volume.setValue(musicVolume);
-				clip.start();
-				clip.stop();
-				clip.setFramePosition(0);
-				
-				tracks.put(TrackNames.values()[i], clip);
-			}
-			
-			for(int i = 0; i < SfxNames.values().length; i++)
-			{
-				URL url = this.getClass().getClassLoader().getResource(sfxResIDs[i]);
-				AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(url);
-				AudioFormat format = audioInputStream.getFormat();
-				DataLine.Info info = new DataLine.Info(Clip.class, format);
-				
-				if(!AudioSystem.isLineSupported(info))
-				{
-					new LineUnavailableException("Line is not supported!");
-				}
-				
-				Clip clip = (Clip) AudioSystem.getLine(info);
-				clip.open(audioInputStream);
-				
-				sfxs.put(SfxNames.values()[i], clip);
-			}
-			
-			BGM = null;
-			BGM2 = null;
-		}
-		catch(IllegalArgumentException e)
-		{
-			e.printStackTrace();
-		}
-		catch(UnsupportedAudioFileException e)
-		{
-			e.printStackTrace();
-		}
-		catch(LineUnavailableException e)
-		{
-			e.printStackTrace();
-		}
-		catch(IOException e)
-		{
-			e.printStackTrace();
+			this.introResID = introResID;
+			this.loopResID = loopResID;
 		}
 	}
 	
-	public void playSound(SfxNames sfxName)
+	public static enum Sfxs
+	{
+		Beep1("sfx/beep1.wav"),
+		EnemyShoot1("sfx/enemyShoot1.wav"),
+		FriendlyShoot1("sfx/friendlyShoot1.wav"),
+		GunOverheat("sfx/gunOverheat.wav"),
+		Hit("sfx/hit.wav"),
+		MenuBadSelect("sfx/menuBadSelect.wav"),
+		MenuMovement("sfx/menuMovement.wav"),
+		SeismicBoom("sfx/seismicBoom.wav"),
+		ShieldRicochet("sfx/shieldRicochet.wav");
+		
+		public final String sfxResID;
+		public final Clip sfxClip;
+		
+		private Sfxs(String sfxResID)
+		{
+			this.sfxResID = sfxResID;
+			Clip clip = null;
+			
+			try
+			{
+				URL url = Audio.class.getClassLoader().getResource(sfxResID);
+				AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(url);
+				AudioFormat format = audioInputStream.getFormat();
+				DataLine.Info info = new DataLine.Info(Clip.class, format);
+				
+				if(!AudioSystem.isLineSupported(info))
+				{
+					new LineUnavailableException("Line is not supported!");
+				}
+				
+				clip = (Clip) AudioSystem.getLine(info);
+				clip.open(audioInputStream);
+				FloatControl volume = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+				volume.setValue((float) (Math.log(sfxVolume)/Math.log(10.0f))*20.0f);
+				//Formula for linear to DB is Math.log(linearVal)/Math.log(10.0f))*20.0f
+			}
+			catch(NullPointerException e)
+			{
+				System.err.println(sfxResID + " does not exist.");
+				e.printStackTrace();
+			}
+			catch(IllegalArgumentException e)
+			{
+				e.printStackTrace();
+			}
+			catch(UnsupportedAudioFileException e)
+			{
+				e.printStackTrace();
+			}
+			catch(LineUnavailableException e)
+			{
+				e.printStackTrace();
+			}
+			catch(IOException e)
+			{
+				e.printStackTrace();
+			}
+			
+			sfxClip = clip;
+		}
+	}
+	
+	public static void openClips(Tracks[] tracksToOpen)
+	{
+		//Close all of the last clips
+		for(Clip clip : openBGMClips) 
+		{
+			clip.close();
+		}
+		openBGMClips.clear();
+		
+		//Open these clips and add them to the open clips arraylist
+		for(Tracks track : tracksToOpen)
+		{
+			try
+			{
+				URL url = Audio.class.getClassLoader().getResource(track.introResID);
+				AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(url);
+				AudioFormat format = audioInputStream.getFormat();
+				DataLine.Info info = new DataLine.Info(Clip.class, format);
+				
+				if(!AudioSystem.isLineSupported(info))
+				{
+					new LineUnavailableException("Line is not supported!");
+				}
+				
+				track.introClip = (Clip) AudioSystem.getLine(info);
+				track.introClip.open(audioInputStream);
+				FloatControl volume = (FloatControl) track.introClip.getControl(FloatControl.Type.MASTER_GAIN);
+				volume.setValue(musicVolume);
+				track.introClip.start();
+				track.introClip.stop();
+				track.introClip.setMicrosecondPosition(0);
+
+				openBGMClips.add(track.introClip);
+				
+				//If there is a loop
+				if(track.loopResID != null)
+				{
+					url = Audio.class.getClassLoader().getResource(track.loopResID);
+					audioInputStream = AudioSystem.getAudioInputStream(url);
+					format = audioInputStream.getFormat();
+					info = new DataLine.Info(Clip.class, format);
+					
+					if(!AudioSystem.isLineSupported(info))
+					{
+						new LineUnavailableException("Line is not supported!");
+					}
+					
+					track.loopClip = (Clip) AudioSystem.getLine(info);
+					track.loopClip.open(audioInputStream);
+					volume = (FloatControl) track.loopClip.getControl(FloatControl.Type.MASTER_GAIN);
+					volume.setValue((float) (Math.log(musicVolume)/Math.log(10.0f))*20.0f);
+					track.loopClip.start();
+					track.loopClip.stop();
+					track.loopClip.setMicrosecondPosition(0);
+
+					openBGMClips.add(track.loopClip);
+				}
+			}
+			catch (LineUnavailableException e)
+			{
+				e.printStackTrace();
+			}
+			catch (UnsupportedAudioFileException e)
+			{
+				e.printStackTrace();
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}	
+		}
+	}
+	
+	public static void playSound(Sfxs sfx)
 	{
 		try
 		{	
-			Clip clip = sfxs.get(sfxName);
+			Clip clip = sfx.sfxClip;
 			clip.setMicrosecondPosition(0);
-			clip.addLineListener(this);	
+			clip.addLineListener(Audio.lineListener);	
 			FloatControl volume = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-			volume.setValue(sfxVolume);
+			volume.setValue((float) (Math.log(sfxVolume)/Math.log(10.0f))*20.0f);
 			clip.start();
 		}
 		catch(IllegalArgumentException e)
@@ -124,33 +214,35 @@ public class Audio implements LineListener, ConstantValues
 		}
 	}
 	
-	public void changeTrack(TrackNames introName, TrackNames loopName)
+	public static void changeTrack(Tracks track)
 	{
-		if(BGMName != null && BGMName.equals(introName) == true)
+		//Return out if the requested track is already playing
+		if(track.introClip == currIntroClip && track.loopClip == currLoopClip)
 		{
 			return;
 		}
 		
-		BGMName = introName;
-		if(BGM != null)
+		interruptThread = true;
+		
+		if(currIntroClip != null)
 		{
-			BGM.stop();
-			BGM.setFramePosition(0);
+			currIntroClip.stop();
+			currIntroClip.setFramePosition(0);
 		}
-		if(BGM2 != null)
+		if(currLoopClip != null)
 		{
-			BGM2.stop();
-			BGM2.setFramePosition(0);
+			currLoopClip.stop();
+			currLoopClip.setFramePosition(0);
 		}
 		
 		try
 		{
-			BGM = tracks.get(introName);
-			BGM.addLineListener(this);
-			FloatControl volume = (FloatControl) BGM.getControl(FloatControl.Type.MASTER_GAIN);
-			volume.setValue(musicVolume);
-			BGM.setFramePosition(0);
-			BGM.start();
+			currIntroClip = track.introClip;
+			currIntroClip.addLineListener(lineListener);
+			FloatControl volume = (FloatControl) currIntroClip.getControl(FloatControl.Type.MASTER_GAIN);
+			volume.setValue((float) (Math.log(musicVolume)/Math.log(10.0f))*20.0f);
+			currIntroClip.setFramePosition(0);
+			currIntroClip.start();
 		}
 		catch(IllegalArgumentException e)
 		{
@@ -161,13 +253,13 @@ public class Audio implements LineListener, ConstantValues
 			e.printStackTrace();
 		}
 		
-		//Operates the loop
-		if(loopName != null)
+		//Operates the currLoopClip
+		if(track.loopClip != null)
 		{		
 			try
 			{
-				BGM2 = tracks.get(loopName);
-				BGM2.addLineListener(this);	
+				currLoopClip = track.loopClip;
+				currLoopClip.addLineListener(lineListener);	
 			}
 			catch(IllegalArgumentException e)
 			{
@@ -183,37 +275,42 @@ public class Audio implements LineListener, ConstantValues
 				@Override
 				public void run()
 				{
-					while(BGM.getFrameLength() >= BGM.getFramePosition() + 1200 && BGM.isRunning() == true)
+					FloatControl volume = (FloatControl) currLoopClip.getControl(FloatControl.Type.MASTER_GAIN);
+					volume.setValue((float) (Math.log(0)/Math.log(10.0f))*20.0f);
+					currLoopClip.start();
+					currLoopClip.loop(Integer.MAX_VALUE);
+					
+					//System.out.println("Before loop: " + track.introResID);
+					while((currIntroClip.getFramePosition() + 1200 <=  currIntroClip.getFrameLength() || currIntroClip.getFramePosition() <= 100) 
+							&& currIntroClip.isRunning() == true && interruptThread == false)
 					{
 						Thread.yield();
 					}
-					//System.out.println(BGM.getFramePosition());
-					if(BGMName == introName)
+					
+					if(interruptThread == true)
 					{
-						FloatControl volume = (FloatControl) BGM2.getControl(FloatControl.Type.MASTER_GAIN);
-						volume.setValue(musicVolume);
-						BGM2.setFramePosition(0);
-						BGM2.start();
-						BGM2.loop(Integer.MAX_VALUE);
-						BGM.stop();
+						//System.out.println("Audio: Killing thread.");
+						return;
 					}
+					
+					//System.out.println(currIntroClip.getFramePosition());
+					//System.out.println("Audio: After loop: " + track.introResID);
+					volume.setValue((float) (Math.log(musicVolume)/Math.log(10.0f))*20.0f);
+					currLoopClip.setFramePosition(0);
 				}
 			};
+			interruptThread = false;
 			new Thread(runnable).start();
+			//System.out.println("Audio: Starting new thread");
 		}
 		else
 		{
-			BGM2 = null;
-			BGM.loop(Integer.MAX_VALUE);
+			currLoopClip = null;
+			currIntroClip.loop(Integer.MAX_VALUE);
 		}
 	}
 	
-	public TrackNames getCurrBGM()
-	{
-		return BGMName;
-	}
-	
-	public void outOfFocus()
+	public static void outOfFocus()
 	{
 		if(outOfFocus == true)
 		{
@@ -233,19 +330,19 @@ public class Audio implements LineListener, ConstantValues
 			musicVolume = musicVolumeHolder;
 		}
 		
-		if(BGM != null)
+		if(currIntroClip != null)
 		{
-			FloatControl volume = (FloatControl) BGM.getControl(FloatControl.Type.MASTER_GAIN);
+			FloatControl volume = (FloatControl) currIntroClip.getControl(FloatControl.Type.MASTER_GAIN);
 			volume.setValue(musicVolume);
 		}
-		else if(BGM2 != null)
+		else if(currLoopClip != null)
 		{
-			FloatControl volume = (FloatControl) BGM2.getControl(FloatControl.Type.MASTER_GAIN);
+			FloatControl volume = (FloatControl) currLoopClip.getControl(FloatControl.Type.MASTER_GAIN);
 			volume.setValue(musicVolume);
 		}
 	}
 	
-	public void returnFocus()
+	public static void returnFocus()
 	{
 		if(outOfFocus == false)
 		{
@@ -265,29 +362,25 @@ public class Audio implements LineListener, ConstantValues
 			musicVolume = musicVolumeHolder;
 		}
 		
-		if(BGM != null)
+		if(currIntroClip != null)
 		{
-			FloatControl volume = (FloatControl) BGM.getControl(FloatControl.Type.MASTER_GAIN);
+			FloatControl volume = (FloatControl) currIntroClip.getControl(FloatControl.Type.MASTER_GAIN);
 			volume.setValue(musicVolume);
 		}
-		else if(BGM2 != null)
+		else if(currLoopClip != null)
 		{
-			FloatControl volume = (FloatControl) BGM2.getControl(FloatControl.Type.MASTER_GAIN);
+			FloatControl volume = (FloatControl) currLoopClip.getControl(FloatControl.Type.MASTER_GAIN);
 			volume.setValue(musicVolume);
 		}
 	}
 	
-	@Override
-	public void update(LineEvent event) 
-	{
-		LineEvent.Type type = event.getType();
-		if(type == LineEvent.Type.START)
+	private static LineListener lineListener = new LineListener()
+	{	
+		@Override
+		public void update(LineEvent event)
 		{
+			// TODO Auto-generated method stub
 			
 		}
-		if(type == LineEvent.Type.STOP)
-		{
-			
-		}
-	}
+	};
 }

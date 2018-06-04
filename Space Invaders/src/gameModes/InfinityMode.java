@@ -1,47 +1,56 @@
 package gameModes;
 
-import bosses.Boss;
-import bosses.BossAlien;
-import core.Entity;
-import enemies.AlienPack;
+import entities.Entity;
+import entities.bosses.Boss;
+import entities.bosses.BossAlien;
+import entities.enemies.AlienPack;
+import entities.players.SpaceShip;
+import entities.shields.ShipShield;
+import input.KeyInputManagement;
 import io.InGamePrints;
 import miscEntities.Wall;
-import players.SpaceShip;
-import shields.ShipShield;
+import system.Audio;
+import system.Audio.Tracks;
+import system.Options;
 import utils.ConstantValues;
+import utils.GameManagementUtils.GameStatus;
 import utils.ObjectCollection;
-import utils.Stats;
+
+/*
+ * For infinity mode:
+ * - roundType: 0 = normal wave, 1 = boss wave
+ */
 
 public class InfinityMode extends GameMode implements ConstantValues
 {
-	private short alienSteps = 16;
+	public int numberInPack = 0;
 	private Boss boss;
 	private Entity aliens;
 	
 	public InfinityMode()
 	{
 		super();
-		alienSteps = ObjectCollection.getGameManagement().getAlienSteps();
+		screenSteps = ObjectCollection.getGameManagement().getAlienSteps();
 	}
 
 	@Override
 	public void resetStats()
 	{
-		Stats.totalTimesShot = 0;
-		Stats.level = 0;
-		Stats.killedAliens = 0;
-		Stats.score = 0;
-		Stats.totalHits = 0;
-		Stats.totalTime = 0;
-		Stats.lives = ObjectCollection.getGameManagement().getStartingLives();
+		super.totalTimesShot = 0;
+		super.level = 0;
+		super.killedAliens = 0;
+		super.score = 0;
+		super.totalHits = 0;
+		super.totalTime = 0;
+		super.lives = ObjectCollection.getGameManagement().getStartingLives();
 		resetPerRoundStats();
 	}
 	
 	public void resetPerRoundStats()
 	{
-		Stats.timesShot = 0;
-		Stats.hits = 0;
-		Stats.roundTime = 0;
+		timesShot = 0;
+		hits = 0;
+		roundTime = 0;
 	}
 	
 	@Override
@@ -49,46 +58,58 @@ public class InfinityMode extends GameMode implements ConstantValues
 	{
 		wall = new Wall(1.0f, 1.0f);
 		ObjectCollection.getEntityManagement().addEntity(wall);
-		ship = new SpaceShip(0.05f, 0.05f);
-		ship.setDefaultPosition(Stats.SCREEN_WIDTH/2 - ship.getDimension().width,
-				(Stats.SCREEN_HEIGHT/alienSteps)*(alienSteps-2));
-		ship.reset();
+		ship = new SpaceShip(this, 0.05f, 0.05f);
+		ship.setDefaultPosition(Options.SCREEN_WIDTH/2 - ship.getDimension().width,
+				(Options.SCREEN_HEIGHT/screenSteps)*(screenSteps-2));
 		ObjectCollection.getEntityManagement().addEntity(ship);
-		gamePrints = new InGamePrints(ship);
 	}
 	
-	@Override
-	protected void startNextRound()
-	{
-		Stats.level++;
-		ObjectCollection.getGameManagement().setRoundType(getNextRoundType());
-		spawnEntities();
-		ObjectCollection.getGameManagement().setInGame(true);
-		changeMusic();
-	}
+	private Runnable startNextRound = new Runnable()
+	{	
+		@Override
+		public void run()
+		{
+			status = GameStatus.PRE_ROUND;
+			changeMusic();
+			ship.reset();
+			waitForInput();
+			status = GameStatus.IN_GAME;
+			inGame = true;
+			level++;
+			roundType = getNextRoundType();
+			spawnEntities();
+			changeMusic();
+		}
+	};
 
 	private byte getNextRoundType()
 	{
 		//Is this next round a boss?
-		return (byte) ((Stats.level % ObjectCollection.getGameManagement().getRoundsBetweenBoss() == 0) ? 1 : 0);
+		return (byte) ((super.level % ObjectCollection.getGameManagement().getRoundsBetweenBoss() == 0) ? 1 : 0);
 	}
 	
 	private void changeMusic()
 	{
-		switch(ObjectCollection.getGameManagement().getRoundType())
+		switch(status)
 		{
-			default:
-			case 0://Normal wave
-				if(ObjectCollection.getAudio().getCurrBGM() != TrackNames.BGM1_INTRO)
+			case PRE_ROUND:
+				Audio.changeTrack(Tracks.BGM3);
+				break;
+			case IN_GAME:
+				switch(roundType)
 				{
-					ObjectCollection.getAudio().changeTrack(TrackNames.BGM1_INTRO, TrackNames.BGM1_LOOP);
+					default:
+					case 0://Normal wave
+						Audio.changeTrack(Tracks.BGM1);
+						break;
+					case 1://Boss
+						Audio.changeTrack(Tracks.BossBGM1);
+						break;
 				}
 				break;
-			case 1://Boss
-				if(ObjectCollection.getAudio().getCurrBGM() != TrackNames.BOSSBGM1)
-				{
-					ObjectCollection.getAudio().changeTrack(TrackNames.BOSSBGM1, null);
-				}
+			case BIG_WIN:
+				Audio.changeTrack(Tracks.Victory1);
+			default:
 				break;
 		}
 	}
@@ -96,22 +117,23 @@ public class InfinityMode extends GameMode implements ConstantValues
 	@Override
 	protected void spawnEntities()
 	{
-		switch(gameManagement.getRoundType())
+		switch(roundType)
 		{
 			case 0://Normal wave
-				aliens = new AlienPack((short) ((Stats.level < 3) ? 9 + Stats.level : 12));
+				numberInPack = 4 * ((super.level < 3) ? 9 + super.level : 12);
+				aliens = new AlienPack(this, numberInPack);
 				ObjectCollection.getEntityManagement().addEntity(aliens);
 				break;
 			case 1://Boss
-				boss = new BossAlien(ship, 0.4f, 0.4f);
-				if(boss instanceof BossAlien)
+				boss = new BossAlien(this, ship, 0.4f, 0.4f);
+				if(boss.hasShield() == true)
 				{
 					((BossAlien) boss).setShield(new ShipShield(boss));
 				}
 				ObjectCollection.getEntityManagement().addEntity(boss);
 				break;
 			default:
-				throw new RuntimeException(gameManagement.getRoundType() + " is an invalid round type for Infinity Mode.");
+				throw new RuntimeException(roundType + " is an invalid round type for Infinity Mode.");
 		}
 	}
 
@@ -119,24 +141,28 @@ public class InfinityMode extends GameMode implements ConstantValues
 	public void startGame()
 	{
 		System.out.println("InfinityMode: startGame called.");
+		super.startGame();
 		ObjectCollection.getEntityManagement().removeAllEntities(true, true);
+		gamePrints = new InGamePrints(this);
+		Audio.openClips(new Tracks[] {Tracks.BGM1, Tracks.BGM3, Tracks.BossBGM1, Tracks.Victory1, Tracks.Victory2, Tracks.Lose1});
 		boss = null;
 		aliens = null;
 		resetStats();
 		initEntitySetUp();
-		startNextRound();
+		new Thread(startNextRound).start();;
 	}
 	
 	private void checkGameStatus()
 	{
-		switch(gameManagement.getRoundType())
+		switch(roundType)
 		{
 			case 0://Normal wave
 				if(aliens instanceof AlienPack == true)
 				{
-					if(((AlienPack) aliens).getAliensInPack() == 0)
+					if(((AlienPack) aliens).getAliensAlive() == 0)//Won normal round
 					{
-						gameManagement.setEndCode((short) 1);
+						score += aliens.calculateScore();
+						status = GameStatus.BIG_WIN;//TODO change this back to WIN
 						endRound();
 					}
 				}
@@ -144,7 +170,7 @@ public class InfinityMode extends GameMode implements ConstantValues
 			case 1://Boss
 				break;
 			default:
-				throw new RuntimeException(gameManagement.getRoundType() + " is an invalid round type for Infinity Mode. Did the game "
+				throw new RuntimeException(roundType + " is an invalid round type for Infinity Mode. Did the game "
 						+ "type change during runtime?");
 		}
 	}
@@ -152,36 +178,55 @@ public class InfinityMode extends GameMode implements ConstantValues
 	private void endRound()
 	{
 		System.out.println("InfinityMode: endRound called.");
-		gameManagement.setInGame(false);
+		inGame = false;
 		
-		switch(gameManagement.getEndCode())
+		switch(status)
 		{
-			case 1://Win
+			case WIN:
 				ObjectCollection.getEntityManagement().removeAllEntities(false, false);
 				break;
-			case 2://Lose
-				if(ObjectCollection.getAudio().getCurrBGM() != TrackNames.LOSE)
-				{
-					ObjectCollection.getAudio().changeTrack(TrackNames.LOSE, null);
-				}
+			case LOSE:
+				break;
+			case BIG_WIN:
 				break;
 			default:
-				throw new RuntimeException(gameManagement.getEndCode() + " is an unrecognized end code for Infinity Mode.");
+				throw new RuntimeException(gameManagement.getGameStatus() + " is an unrecognized end code for Infinity Mode.");
+		}
+		
+		changeMusic();
+	}
+	
+	private void waitForInput()
+	{
+		while(KeyInputManagement.fireKeyPressed == true)
+		{
+			try
+			{
+				Thread.sleep(20);
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		
+		while(KeyInputManagement.fireKeyPressed != true)
+		{
+			try
+			{
+				Thread.sleep(20);
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+			}
 		}
 	}
 
 	@Override
-	public void stopGame()
+	public void update()
 	{
-		System.out.println("InfinityMode: stopGame called.");
-		ObjectCollection.getEntityManagement().removeAllEntities(true, true);
-		resetStats();
-	}
-
-	@Override
-	public void frameCall(int elapsedTime)
-	{
-		if(gameManagement.getInGame() == false)
+		if(inGame == false)
 		{
 			return;
 		}

@@ -4,8 +4,8 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
-import bosses.Boss;
-import bosses.BossAlien;
+import entities.bosses.Boss;
+import entities.bosses.BossAlien;
 
 public class EnemyUI
 {
@@ -57,9 +57,9 @@ public class EnemyUI
 	private void doHPAlphaMath(long elapsedTime)
 	{
 		//Check if the boss bar can fade
-		if(boss.getCurrentHP() != HPStamp)
+		if(boss.getCurrentHealth() != HPStamp)
 		{
-			HPStamp = boss.getCurrentHP();
+			HPStamp = boss.getCurrentHealth();
 			timeStamps[0] = System.currentTimeMillis();
 			
 			HPBarAlpha = 220;
@@ -77,9 +77,9 @@ public class EnemyUI
 	private void doShieldAlphaMath(long elapsedTime)
 	{
 		//Check if the shield bar can fade
-		if(((BossAlien) boss).getShield().getCurrentHP() != shieldStamp)
+		if(((BossAlien) boss).getShield().getCurrentHealth() != shieldStamp)
 		{
-			shieldStamp = (int) ((BossAlien) boss).getShield().getCurrentHP();
+			shieldStamp = (int) ((BossAlien) boss).getShield().getCurrentHealth();
 			timeStamps[1] = System.currentTimeMillis();
 			
 			shieldBarAlpha = 220;
@@ -114,7 +114,7 @@ public class EnemyUI
 		gfx.setColor(new Color(255, 255, 0, HPBarAlpha));//yellow
 		gfx.fillRect(rect.getBounds().x+1,
 				rect.getBounds().y+1,
-				(int) ((rect.getBounds().width-1)*((boss.getCurrentHP()*1.0)/(boss.getMaxHP()*1.0))),
+				(int) ((rect.getBounds().width-1)*((boss.getCurrentHealth()*1.0)/(boss.getMaxHealth()*1.0))),
 				(rect.getBounds().height-1));
 	}
 	
@@ -134,7 +134,7 @@ public class EnemyUI
 		gfx.setColor(new Color(111, 0, 255, shieldBarAlpha));//purple
 		gfx.fillRect(rect.getBounds().x+1,
 				rect.getBounds().y+1,
-				(int) ((rect.getBounds().width-1)*((((BossAlien) boss).getShield().getCurrentHP()*1.0)/(((BossAlien) boss).getShield().getMaxHP()*1.0))),
+				(int) ((rect.getBounds().width-1)*((((BossAlien) boss).getShield().getCurrentHealth()*1.0)/(((BossAlien) boss).getShield().getMaxHealth()*1.0))),
 				rect.getBounds().height-1);
 	}
 }
