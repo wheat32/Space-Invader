@@ -1,23 +1,27 @@
 package entities.enemies;
 
 import entities.Entity;
+import entities.EntityTags.EntityFaction;
 import entities.Sprite;
 import gameModes.GameMode;
-import miscEntities.Wall;
 import utils.ConstantValues;
+import utils.EntityManagement;
 import utils.ObjectCollection;
 
 public class MarchingAlien extends Entity implements ConstantValues 
 {
 	private short numInRow = 0;
 	private AlienPack alienPack;
+	private long timeBonusLength = 0;
+	private GameMode gameMode;
 	
-	public MarchingAlien(GameMode gameMode, float screenDivX, float screenDivY, short numInRow)
+	public MarchingAlien(float screenDivX, float screenDivY, short numInRow)
 	{
-		super(gameMode, screenDivX, screenDivY);
+		super(screenDivX, screenDivY, RenderLayer.SPRITE1, EntityFaction.ALIEN);
 		sprite = new Sprite(ALIENSPRITESHEET1, ALIEN_SPRITE_COUNT);
 		this.numInRow = numInRow;
 		timeBonusLength = 25000 + System.currentTimeMillis();//25 seconds
+		gameMode = ObjectCollection.getGameManagement().getGameMode();
 	}
 	
 	public void setAlienPack(AlienPack alienPack)
@@ -50,39 +54,45 @@ public class MarchingAlien extends Entity implements ConstantValues
 	}
 
 	@Override
-	public boolean inCollision(Entity e) 
+	public boolean inCollision() 
 	{	
-		if(e instanceof Wall)
+		if(ObjectCollection.getGameManagement().getWall().isTouching(this) == true)
 		{
-			Wall w = (Wall) e;
-			
-			if(w.isTouchingWall(this) == true)
+			if(alienPack != null)
 			{
-				if(alienPack != null)
-				{
-					alienPack.moveDown(this);
-				}
+				alienPack.moveDown(this);
+				return true;
 			}
 		}
-		else if(this.getBounds().intersects(e.getBounds()) == true)
-		{	
-			if(this.reduceHealth(e.getDamage()) == true)
+		
+		for(Entity e : EntityManagement.getEntities())
+		{
+			if(e.entityFaction != EntityFaction.FRIENDLY)
 			{
-				gameMode.killedAliens++;
-				gameMode.score += (calculateScore());
+				continue;
+			}
+			
+			if(this.getBounds().intersects(e.getBounds()) == true)
+			{	
+				if(this.reduceHealth(e.getDamage()) == true)
+				{
+					gameMode.killedAliens++;
+					gameMode.score += (calculateScore());
+					
+					if(alienPack != null)
+					{
+						alienPack.killAlien(this);
+					}
+					else
+					{
+						EntityManagement.removeEntity(this);
+					}
+				}
 				
-				if(alienPack != null)
-				{
-					alienPack.killAlien(this);
-				}
-				else
-				{
-					ObjectCollection.getEntityManagement().removeEntity(this);
-				}
+				return true;
 			}
-			
-			return true;
 		}
+		
 		return false;
 	}
 }

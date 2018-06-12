@@ -19,7 +19,6 @@ import java.util.ConcurrentModificationException;
 import javax.swing.JFrame;
 import javax.swing.Timer;
 
-import entities.Entity;
 import input.KeyInputManagement;
 import io.FontManagement;
 import system.Audio;
@@ -27,11 +26,11 @@ import system.Options;
 import system.Time;
 import updates.EarlyUpdateListener;
 import updates.GraphicsListener;
+import updates.LateUpdateListener;
 import updates.UpdateListener;
-import utils.ConstantValues;
-import utils.ObjectCollection;
+import utils.ConstantValues.RenderLayer;
 
-public class Renderer extends JFrame implements ComponentListener, ConstantValues, KeyListener, MouseListener
+public class Renderer extends JFrame implements ComponentListener, KeyListener, MouseListener
 {
 	private static final long serialVersionUID = 1L;
 	
@@ -43,7 +42,7 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 	 * <i>The first value in the Entry is the render layer.</i>
 	 */
 	private ArrayList<AbstractMap.SimpleEntry<Byte, GraphicsListener>> graphicsListeners = new ArrayList<>();
-	private boolean resized = false;
+	private ArrayList<LateUpdateListener> lateUpdateListeners = new ArrayList<LateUpdateListener>();
 	
 	private Canvas canvas;
 	
@@ -77,7 +76,7 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 				makeEarlyUpdateCalls();
 				makeUpdateCalls();
 				render();
-				//makeLateUpdateCalls();//TODO
+				makeLateUpdateCalls();
 			}
 		});
 		timer.start();
@@ -98,38 +97,11 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 		gfx.clearRect(0, 0, Options.SCREEN_WIDTH, Options.SCREEN_HEIGHT);
 		//[END] ----- Required Code ----- \\
 		
-		boolean syncResized = resized;//Evade threading issues
-		
 		for(int i = 0; i < graphicsListeners.size(); i++)
 		{
-			graphicsListeners.get(i).getValue().graphicsCall(gfx, syncResized);
+			graphicsListeners.get(i).getValue().graphicsCall(gfx);
 		}
 		
-		for(int i = 0; i < ObjectCollection.getEntityManagement().getEntitiesSize(); i++) 
-		{
-			Entity e = ObjectCollection.getEntityManagement().getEntity(i);
-			
-			//Draw the entity
-			e.getSprite().drawImage(gfx, e.getBounds(), e.getActive());
-
-			if(ObjectCollection.getGameManagement().getInGame() == false	) 
-			{
-				e.deactivate();
-				continue;
-			}
-			
-			//Collision detection
-			for(int j = i+1; j < ObjectCollection.getEntityManagement().getEntitiesSize(); j++)
-			{
-				Entity e2 = ObjectCollection.getEntityManagement().getEntity(j);
-				
-				e.inCollision(e2);
-				e2.inCollision(e);
-				//System.out.println(e.toString() + " is in collision with " + e2.toString());
-			}
-		}
-		
-		resized = false;
 		gfx.dispose();
 		strategy.show();
 	}
@@ -196,6 +168,11 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 		}
 	}
 	
+	public void addGraphicsListener(GraphicsListener listener, RenderLayer layer)
+	{
+		addGraphicsListener(listener, (byte) layer.layer);
+	}
+	
 	/***
 	 * 
 	 * @param listener
@@ -211,6 +188,7 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 				if(i+1 == graphicsListeners.size() || layer < graphicsListeners.get(i+1).getKey())
 				{
 					graphicsListeners.add(i+1, new AbstractMap.SimpleEntry<Byte, GraphicsListener>(layer, listener));
+					break;
 				}
 			}
 		}
@@ -245,7 +223,7 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 		return -1;
 	}
 	
-	public void changeGraphicsLayer(GraphicsListener listener, byte newLayer)
+	public void changeGraphicsLayer(GraphicsListener listener, RenderLayer newLayer)
 	{
 		if(removeGraphicsListener(listener) == false)
 		{
@@ -254,6 +232,37 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 		}
 		
 		addGraphicsListener(listener, newLayer);
+	}
+	
+	public void addLateUpdateListener(LateUpdateListener listener)
+	{
+		if(lateUpdateListeners.contains(listener) == false)
+		{
+			lateUpdateListeners.add(listener);
+		}
+	}
+	
+	public void removeLateUpdateListener(LateUpdateListener listener)
+	{
+		if(lateUpdateListeners.remove(listener) == false)
+		{
+			System.err.println("Error removing object " + listener.toString() + " as a late update listener.");
+		}
+	}
+	
+	private void makeLateUpdateCalls()
+	{
+		try
+		{
+			for(LateUpdateListener listener : lateUpdateListeners)
+			{
+				listener.lateUpdate();
+			}
+		}
+		catch(ConcurrentModificationException e)
+		{
+			//Do nothing. Really a trivial exception that occurs when adding an element to an ArrayList while it is being iterated through
+		}
 	}
 	
 	@Override
@@ -280,22 +289,19 @@ public class Renderer extends JFrame implements ComponentListener, ConstantValue
 	@Override
 	public void componentResized(ComponentEvent e)
 	{
-		if(updateListeners.size() == 0)
+		if(graphicsListeners.size() == 0)
 		{
 			return;//This method is being called before everything is initialized. This is to ignore that initial call.
 		}
-		
-		resized = true;
 		
 		int oldScreenWidth = Options.SCREEN_WIDTH;
 		int oldScreenHeight = Options.SCREEN_HEIGHT;
 		Options.SCREEN_WIDTH = canvas.getWidth();
 		Options.SCREEN_HEIGHT = canvas.getHeight();
 		
-		for(int i = 0; i < ObjectCollection.getEntityManagement().getEntitiesSize(); i++)
+		for(int i = 0; i < graphicsListeners.size(); i++)
 		{
-			ObjectCollection.getEntityManagement().getEntity(i).resize(oldScreenWidth, oldScreenHeight);
-			ObjectCollection.getEntityManagement().getEntity(i).move();//TODO when move passed elapsedTime, it passed a 0 here
+			graphicsListeners.get(i).getValue().resize(oldScreenWidth, oldScreenHeight);
 		}
 		
 		FontManagement.resetFontSizes();

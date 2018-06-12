@@ -3,6 +3,7 @@ package menus;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import utils.EntityManagement;
 import utils.ObjectCollection;
 
 public class PauseMenu extends JFrame
@@ -35,7 +36,7 @@ public class PauseMenu extends JFrame
 			case 2:
 				ObjectCollection.getMainMenu().setInMainMenu(true);
 				ObjectCollection.getGameManagement().stopGame();
-				ObjectCollection.getEntityManagement().removeAllEntities(true, true);
+				EntityManagement.removeAllEntities(true);
 				break;
 			case 3:
 				if(JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(this, "Are you sure you want to exit?", "Exit", JOptionPane.OK_CANCEL_OPTION))

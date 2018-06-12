@@ -5,11 +5,12 @@ import java.util.concurrent.TimeUnit;
 
 import entities.players.SpaceShip;
 import io.InGamePrints;
-import miscEntities.Wall;
 import updates.UpdateListener;
+import utils.EntityManagement;
 import utils.GameManagementUtils;
 import utils.GameManagementUtils.GameStatus;
 import utils.ObjectCollection;
+import utils.Wall;
 
 public abstract class GameMode implements UpdateListener
 {
@@ -54,7 +55,7 @@ public abstract class GameMode implements UpdateListener
 	public void stopGame()
 	{
 		inGame = false;
-		ObjectCollection.getEntityManagement().removeAllEntities(true, true);
+		EntityManagement.removeAllEntities(true);
 		resetStats();
 	}
 	
@@ -127,5 +128,10 @@ public abstract class GameMode implements UpdateListener
 	public short getScreenSteps()
 	{
 		return screenSteps;
+	}
+	
+	public Wall getWall()
+	{
+		return wall;
 	}
 }

@@ -5,41 +5,37 @@ import java.util.ArrayList;
 import entities.Entity;
 import entities.players.SpaceShip;
 import input.KeyInputManagement;
-import miscEntities.Wall;
-import updates.UpdateListener;
+import updates.LateUpdateListener;
 
-public class EntityManagement implements ConstantValues, UpdateListener
+public class EntityManagement implements ConstantValues, LateUpdateListener
 {
-	private ArrayList<Entity> entities = new ArrayList<>();
-	private ArrayList<Entity> removalList = new ArrayList<>();
+	private static EntityManagement entityManagementInstance;
+	private static ArrayList<Entity> entities = new ArrayList<>();
+	private static ArrayList<Entity> removalList = new ArrayList<>();
 	
 	public EntityManagement()
 	{
-		ObjectCollection.getRenderer().addUpdateListener(this);
+		entityManagementInstance = this;
+		ObjectCollection.getRenderer().addLateUpdateListener(entityManagementInstance);
 	}
 	
-	public void addEntity(Entity entity)
+	public static void addEntity(Entity entity)
 	{
 		entities.add(entity);
 	}
 	
-	public void addEntityGroup(ArrayList<Entity> entities)
+	public static void addEntities(ArrayList<Entity> entities)
 	{
-		this.entities.addAll(entities);
+		entities.addAll(entities);
 	}
 	
-	public void removeEntity(Entity entity)
+	public static void removeEntity(Entity entity)
 	{
 		removalList.add(entity);
 	}
 	
-	public Entity getEntity(Entity requestedEntity)
+	public static Entity getEntity(Entity requestedEntity)
 	{
-		if(containsEntity(requestedEntity) == false)
-		{
-			return null;
-		}
-		
 		for(Entity entity : entities)
 		{
 			if(entity.getClass().equals(requestedEntity.getClass()) == true)
@@ -51,9 +47,9 @@ public class EntityManagement implements ConstantValues, UpdateListener
 		return null;
 	}
 	
-	public Entity getEntity(int index)
+	public static Entity getEntity(int index)
 	{
-		if(index <= entities.size())
+		if(index <= entities.size() && index >= 0)
 		{
 			return entities.get(index);
 		}
@@ -61,17 +57,22 @@ public class EntityManagement implements ConstantValues, UpdateListener
 		return null;
 	}
 	
-	public int getEntitiesSize()
+	public static ArrayList<Entity> getEntities()
+	{
+		return entities;
+	}
+	
+	public static int getEntitiesSize()
 	{
 		return entities.size();
 	}
 	
-	public boolean containsEntity(Entity entity)
+	public static boolean containsEntity(Entity entity)
 	{
 		return (entities.contains(entity)) ? true : false;
 	}
 	
-	public void awaitingRespawn()
+	public static void awaitingRespawn()
 	{
 		//Waiting on user input to start game
 		if(KeyInputManagement.fireKeyPressed == true)
@@ -82,7 +83,7 @@ public class EntityManagement implements ConstantValues, UpdateListener
 		}
 	}
 	
-	private void shipRespawn() 
+	private static void shipRespawn() 
 	{
 		/*if(objColl.getAlienPack() != null)//TODO
 		{
@@ -96,13 +97,10 @@ public class EntityManagement implements ConstantValues, UpdateListener
 	}
 	
 	/**
-	 * <b>Removes all* entities from the ArrayList containing the entities.</b>
-	 * <p>
-	 * <i>*The only entity not removed is the Wall</i>
+	 * <b>Removes all entities from the ArrayList containing the entities.</b>
 	 * @param includeShip - true to remove the SpaceShip, false to leave it
-	 * @param includeWall - true to remove the Wall, false to leave it
 	 */
-	public void removeAllEntities(boolean includeShip, boolean includeWall)
+	public static void removeAllEntities(boolean includeShip)
 	{
 		for(Entity entity : entities)
 		{
@@ -112,17 +110,11 @@ public class EntityManagement implements ConstantValues, UpdateListener
 				entities.remove(entity);
 				continue;
 			}
-			
-			//Remove all except for the wall
-			if(entity instanceof Wall == true && includeWall == true)
-			{
-				entities.remove(entity);
-			}
 		}
 	}
 
 	@Override
-	public void update()//TODO make this late update
+	public void lateUpdate()
 	{
 		if(removalList.isEmpty() == false)
 		{

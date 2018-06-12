@@ -4,15 +4,15 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 
 import entities.Entity;
+import entities.EntityTags.EntityFaction;
 import entities.Sprite;
 import entities.players.SpaceShip;
-import gameModes.GameMode;
-import miscEntities.Wall;
 import system.Audio;
 import system.Audio.Sfxs;
 import system.Options;
 import system.Time;
 import utils.ConstantValues;
+import utils.EntityManagement;
 import utils.ObjectCollection;
 
 public class SpaceMine extends Projectile implements ConstantValues
@@ -21,9 +21,9 @@ public class SpaceMine extends Projectile implements ConstantValues
 	private boolean blowingUp = false;
 	private float alpha = 1f;
 
-	public SpaceMine(GameMode gameMode, Entity target, float screenDivX, float screenDivY)
+	public SpaceMine(Entity target, Entity origin, float screenDivX, float screenDivY)
 	{
-		super(gameMode, target, screenDivX, screenDivY);
+		super(target, screenDivX, screenDivY, RenderLayer.SPRITE2, origin.entityFaction);
 		super.setHealth(300);
 		
 		sprite = new Sprite(SPACEMINESHEET, SPACE_MINE_COUNT);
@@ -43,7 +43,7 @@ public class SpaceMine extends Projectile implements ConstantValues
 		if(isDead() == true && blowingUp == false)
 		{
 			blowUp();
-			gameMode.score += Math.round(60.0*((gameMode.level/4.0)));
+			ObjectCollection.getGameManagement().getGameMode().score += Math.round(60.0*((ObjectCollection.getGameManagement().getGameMode().level/4.0)));
 		}
 		
 		if(blowingUp == true)
@@ -69,90 +69,85 @@ public class SpaceMine extends Projectile implements ConstantValues
 		    sprite.addToCurr(tm, 50);
 		}
 	}*/
-	
-	@Override
-	public int calculateScore()
-	{
-		//TODO
-		return 0;
-	}
+
 
 	@Override
-	public boolean inCollision(Entity e)
+	public boolean inCollision()
 	{
-		if(e instanceof LaserCannon && blowingUp == false)
+		if(ObjectCollection.getGameManagement().getWall().isOutside(this) == true && blowingUp == false)
 		{
-			LaserCannon m = (LaserCannon) e;
-			
-			if(this.getBounds().intersects(m.getBounds()) == true)
-			{
-				ObjectCollection.getEntityManagement().removeEntity(m);
-				currHealth -= 100;
-				Audio.playSound(Sfxs.Hit);
-				return true;
-			}
+			EntityManagement.removeEntity(this);
+			return true;
 		}
-		else if(e instanceof Wall && blowingUp == false)
+		
+		for(Entity e : EntityManagement.getEntities())
 		{
-			Wall w = (Wall) e;
-			
-			if(this.getBounds().intersects(w.getBounds()) == false)
+			if(e.entityFaction != EntityFaction.FRIENDLY)
 			{
-				ObjectCollection.getEntityManagement().removeEntity(this);
-				return true;
+				continue;
 			}
-		}
-		else if(e instanceof SpaceShip)
-		{
-			SpaceShip ss = (SpaceShip) e;
 			
-			if(this.getBounds().intersects(ss.getBounds()) == true)
+			if(e instanceof LaserCannon && blowingUp == false)
 			{
-				if(blowingUp == false)
+				LaserCannon m = (LaserCannon) e;
+				
+				if(this.getBounds().intersects(m.getBounds()) == true)
 				{
-					blowUp();
-				}
-				else
-				{
-					if(ss.getRx() - this.getRx() >= 0 && ss.getRy() - this.ry >= 0)//top left point on ship
-					{
-						if(image.getRGB((int) (ss.getRx() - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
-						{
-							ObjectCollection.getEntityManagement().removeEntity(this);
-							ObjectCollection.getEntityManagement().removeEntity(ss);
-							return true;
-						}
-					}
-					else if(ss.getRx() + ss.getDimension().width - this.rx >= 0 && ss.getRy() - this.ry >= 0)//top right point on ship
-					{
-						if(image.getRGB((int) (ss.getRx() + ss.getDimension().width - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
-						{
-							ObjectCollection.getEntityManagement().removeEntity(this);
-							ObjectCollection.getEntityManagement().removeEntity(ss);
-							return true;
-						}
-					}
-					else if(ss.getRx() - this.rx >= 0 && ss.getRy() + ss.getDimension().height - this.ry >= 0)//bottom left point on ship
-					{
-						if(image.getRGB((int) (ss.getRx() - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
-						{
-							ObjectCollection.getEntityManagement().removeEntity(this);
-							ObjectCollection.getEntityManagement().removeEntity(ss);
-							return true;
-						}
-					}
-					else if(ss.getRx() + ss.getDimension().width - this.rx >= 0 && ss.getRy() + ss.getDimension().height - this.ry >= 0)//bottom right point on ship
-					{
-						if(image.getRGB((int) (ss.getRx() + ss.getDimension().width - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
-						{
-							ObjectCollection.getEntityManagement().removeEntity(this);
-							ObjectCollection.getEntityManagement().removeEntity(ss);
-							return true;
-						}
-					}
+					currHealth -= 100;
+					Audio.playSound(Sfxs.Hit);
+					return true;
 				}
 			}
+			else if(e instanceof SpaceShip)
+			{
+				SpaceShip ss = (SpaceShip) e;
+				
+				if(this.getBounds().intersects(ss.getBounds()) == true)
+				{
+					if(blowingUp == false)
+					{
+						blowUp();
+					}
+					else
+					{
+						if(ss.getRx() - this.getRx() >= 0 && ss.getRy() - this.ry >= 0)//top left point on ship
+						{
+							if(image.getRGB((int) (ss.getRx() - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
+							{
+								EntityManagement.removeEntity(this);
+								return true;
+							}
+						}
+						else if(ss.getRx() + ss.getDimension().width - this.rx >= 0 && ss.getRy() - this.ry >= 0)//top right point on ship
+						{
+							if(image.getRGB((int) (ss.getRx() + ss.getDimension().width - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
+							{
+								EntityManagement.removeEntity(this);
+								return true;
+							}
+						}
+						else if(ss.getRx() - this.rx >= 0 && ss.getRy() + ss.getDimension().height - this.ry >= 0)//bottom left point on ship
+						{
+							if(image.getRGB((int) (ss.getRx() - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
+							{
+								EntityManagement.removeEntity(this);
+								return true;
+							}
+						}
+						else if(ss.getRx() + ss.getDimension().width - this.rx >= 0 && ss.getRy() + ss.getDimension().height - this.ry >= 0)//bottom right point on ship
+						{
+							if(image.getRGB((int) (ss.getRx() + ss.getDimension().width - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
+							{
+								EntityManagement.removeEntity(this);
+								return true;
+							}
+						}
+					}
+				}
+			}
 		}
+		
+		
 		return false;
 	}
 	
@@ -184,7 +179,7 @@ public class SpaceMine extends Projectile implements ConstantValues
 			
 			if(alpha <= 0)
 			{
-				ObjectCollection.getEntityManagement().removeEntity(this);
+				EntityManagement.removeEntity(this);
 			}
 			
 			return;
@@ -238,7 +233,7 @@ public class SpaceMine extends Projectile implements ConstantValues
 	
 	public void killSelf()
 	{
-		ObjectCollection.getEntityManagement().removeEntity(this);
+		EntityManagement.removeEntity(this);
 	}
 	
 	public boolean isBlowingUp()

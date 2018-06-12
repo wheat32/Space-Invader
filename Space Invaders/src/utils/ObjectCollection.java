@@ -9,7 +9,6 @@ public final class ObjectCollection
 {
 	private static Background background;
 	private static DebugPrints debugPrints;
-	private static EntityManagement entityManagement;
 	private static GameManagementUtils gameManagement;
 	private static MainMenu mainMenu;
 	private static Renderer renderer;
@@ -30,15 +29,6 @@ public final class ObjectCollection
 			debugPrints = new DebugPrints();
 		}
 		return debugPrints;
-	}
-	
-	public static EntityManagement getEntityManagement()
-	{
-		if(entityManagement == null)
-		{
-			entityManagement = new EntityManagement();
-		}	
-		return entityManagement;
 	}
 	
 	public static GameManagementUtils getGameManagement()

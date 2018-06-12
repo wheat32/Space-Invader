@@ -1,12 +1,13 @@
 package entities.enemies;
 
-import java.awt.Graphics2D;
 import java.util.ArrayList;
 
 import entities.Entity;
+import entities.EntityTags.EntityFaction;
 import gameModes.GameMode;
 import system.Options;
 import system.Time;
+import utils.EntityManagement;
 import utils.ObjectCollection;
 
 public class AlienPack extends Entity
@@ -23,16 +24,13 @@ public class AlienPack extends Entity
 	
 	private ArrayList<Entity> aliens = new ArrayList<Entity>();
 	private short aliensAlive;
+	private GameMode gameMode;
 	
-	/**The constructor for an AlienPack
-	 * 
-	 * @param objColl - The object collection
-	 * @param aliensInRow - How many aliens should be in each row initially
-	 */
-	public AlienPack(GameMode gameMode, int numberInPack) 
+	public AlienPack(int numberInPack) 
 	{
-		super.gameMode = gameMode;
+		super(EntityFaction.ALIEN);
 		super.setHealth(numberInPack);//The health for this represents how many aliens are in the pack
+		gameMode = ObjectCollection.getGameManagement().getGameMode();
 		aliensInRow = (short) (numberInPack/4);
 		aliensInColumn = (short) (numberInPack/aliensInRow);
 		rx = new float[aliensInRow];
@@ -51,7 +49,7 @@ public class AlienPack extends Entity
 			
 			columnRelatedToRow = (byte) ((columnRelatedToRow >= aliensInRow) ? 1 : columnRelatedToRow+1);
 			
-			marchingAlien = new MarchingAlien(gameMode, 0.05f, 0.05f, (short) (columnRelatedToRow-1));
+			marchingAlien = new MarchingAlien(0.05f, 0.05f, (short) (columnRelatedToRow-1));
 			marchingAlien.setAlienPack(this);
 			
 			marchingAlien.setPosition(marchingAlien.getDimension().width*columnRelatedToRow + marchingAlien.getDimension().width * columnRelatedToRow/8
@@ -75,7 +73,7 @@ public class AlienPack extends Entity
 		
 		aliensAlive = (short) aliens.size();
 		
-		ObjectCollection.getEntityManagement().addEntityGroup(aliens);
+		EntityManagement.addEntities(aliens);
 	}
 	
 	@Override
@@ -200,7 +198,7 @@ public class AlienPack extends Entity
 	{
 		aliensAlive--;
 		aliens.remove(e);
-		ObjectCollection.getEntityManagement().removeEntity(e);
+		EntityManagement.removeEntity(e);
 		//TODO replace shot alien with null
 	}
 	
@@ -225,16 +223,9 @@ public class AlienPack extends Entity
 		}
 	}*/
 
-	
-	@Override
-	public int calculateScore()
-	{
-		// TODO Auto-generated method stub
-		return 0;
-	}
 
 	@Override
-	public boolean inCollision(Entity e)
+	public boolean inCollision()
 	{
 		return false;
 	}

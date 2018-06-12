@@ -1,81 +1,94 @@
 package entities;
 
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
-import gameModes.GameMode;
+import entities.EntityTags.EntityFaction;
 import system.Options;
 import updates.GraphicsListener;
+import utils.ConstantValues.RenderLayer;
+import utils.ObjectCollection;
 
 public abstract class Entity implements GraphicsListener
 {
 	protected float rx, ry;//positions params
 	protected float vx, vy;//velocity params
 	protected float px, py;//percentage accross screen params
+	
 	protected Dimension dimension = new Dimension();
 	protected float screenDivX, screenDivY;
+	protected byte renderLayer;
+	
+	protected Sprite sprite;
 	protected int active = 0;
+	
+	public final EntityFaction entityFaction;
 	protected int maxHealth;
 	protected int currHealth;
 	protected int damage;
-	protected long timeBonusLength;
 	
-	protected Sprite sprite;
-	protected GameMode gameMode;
-	
-	/**
-	 * No-arg constructor for entity. Should only be used for special-condition entities.
-	 */
-	public Entity()
+	public Entity(EntityFaction entityFaction)
 	{
-		
+		this.renderLayer = RenderLayer.SPRITE1.layer;
+		this.entityFaction = entityFaction;
+		ObjectCollection.getRenderer().addGraphicsListener(this, renderLayer);
+	}
+	
+	public Entity(RenderLayer renderLayer, EntityFaction entityFaction)
+	{
+		this.renderLayer = renderLayer.layer;
+		this.entityFaction = entityFaction;
+		ObjectCollection.getRenderer().addGraphicsListener(this, renderLayer);
 	}
 	
 	/**
-	 * For special cases where the entity is not tangible
-	 * @param gameMode - The current game mode being played.
-	 */
-	public Entity(GameMode gameMode)
-	{
-		this.gameMode = gameMode;
-	}
-	
-	/**
-	 * Constructor for entity. Should be used for very basic entities with no AI or movement.
+	 * Constructor for entity.</br><i>Note: The rendering layer used will be SPRITE1</i>
 	 * @param screenDivX - How the screen should be divided in terms of X.
 	 * @param screenDivY - How the screen should be divided in terms of Y.
 	 */
-	public Entity(float screenDivX, float screenDivY)
+	public Entity(float screenDivX, float screenDivY, EntityFaction entityFaction)
+	{
+		this(screenDivX, screenDivY, RenderLayer.SPRITE1.layer, entityFaction);
+	}
+	
+	/**
+	 * Constructor for entity.
+	 * @param screenDivX - How the screen should be divided in terms of X.
+	 * @param screenDivY - How the screen should be divided in terms of Y.
+	 * @param renderLayer - The layer to be rendered on.
+	 */
+	public Entity(float screenDivX, float screenDivY, RenderLayer renderLayer, EntityFaction entityFaction)
+	{
+		this(screenDivX, screenDivY, renderLayer.layer, entityFaction);
+	}
+	
+	/**
+	 * Constructor for entity.
+	 * @param screenDivX - How the screen should be divided in terms of X.
+	 * @param screenDivY - How the screen should be divided in terms of Y.
+	 * @param renderLayer - The layer to be rendered on (byte).
+	 */
+	public Entity(float screenDivX, float screenDivY, byte renderLayer, EntityFaction entityFaction)
 	{
 		dimension = new Dimension((int) (Options.SCREEN_WIDTH*screenDivX), (int) (Options.SCREEN_HEIGHT*screenDivY));
 		this.screenDivX = screenDivX;
 		this.screenDivY = screenDivY;
-	}
-	
-	/**
-	 * Constructor for entity. Should be used for entities which need to know meta information.
-	 * @param gameMode - The current game mode being played.
-	 * @param screenDivX - How the screen should be divided in terms of X.
-	 * @param screenDivY - How the screen should be divided in terms of Y.
-	 */
-	public Entity(GameMode gameMode, float screenDivX, float screenDivY)
-	{
-		this.gameMode = gameMode;
-		dimension = new Dimension((int) (Options.SCREEN_WIDTH*screenDivX), (int) (Options.SCREEN_HEIGHT*screenDivY));
-		this.screenDivX = screenDivX;
-		this.screenDivY = screenDivY;
+		this.renderLayer = renderLayer;
+		this.entityFaction = entityFaction;
+		ObjectCollection.getRenderer().addGraphicsListener(this, renderLayer);
 	}
 	
 	public abstract void move();
-	public abstract int calculateScore();
-	public abstract boolean inCollision(Entity e);
+	public abstract boolean inCollision();
 	
-	//USE AS LITTLE AS POSSIBLE
-	public Rectangle getBounds()
+	@Override
+	public void graphicsCall(Graphics2D gfx)
 	{
-		return new Rectangle((int)rx, (int)ry, dimension.width, dimension.height);
+		sprite.drawImage(gfx, getBounds(), active);
 	}
 	
+	@Override
 	public void resize(int oldScreenWidth, int oldScreenHeight)
 	{
 		if(dimension == null)
@@ -91,6 +104,12 @@ public abstract class Entity implements GraphicsListener
 		
 		rx = Options.SCREEN_WIDTH * percentageThroughX;
 		ry = Options.SCREEN_HEIGHT * percentageThroughY;
+	}
+	
+	//USE AS LITTLE AS POSSIBLE
+	public Rectangle getBounds()
+	{
+		return new Rectangle((int)rx, (int)ry, dimension.width, dimension.height);
 	}
 	
 	public void setPosition(float x, float y)

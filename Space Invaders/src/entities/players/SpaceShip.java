@@ -1,16 +1,17 @@
 package entities.players;
 
 import entities.Entity;
+import entities.EntityTags.EntityFaction;
 import entities.Sprite;
 import entities.projectiles.LaserCannon;
 import gameModes.GameMode;
 import input.KeyInputManagement;
-import miscEntities.Wall;
 import system.Audio;
 import system.Audio.Sfxs;
 import system.Options;
 import system.Time;
 import utils.ConstantValues;
+import utils.EntityManagement;
 import utils.GameManagementUtils.GameStatus;
 import utils.ObjectCollection;
 
@@ -26,13 +27,15 @@ public class SpaceShip extends Entity implements ConstantValues
 	private long lastFired = System.currentTimeMillis();
 	private float defaultPosX, defaultPosY;
 	private boolean movingUp = false;
+	private GameMode gameMode;
 	
-	public SpaceShip(GameMode gameMode, float screenDivX, float screenDivY)
+	public SpaceShip(float screenDivX, float screenDivY)
 	{
-		super(gameMode, screenDivX, screenDivY);
+		super(screenDivX, screenDivY, RenderLayer.SPRITE1, EntityFaction.FRIENDLY);
 		super.setHealth(1);
 		super.damage = 1;
 		sprite = new Sprite(SHIPSPRITESHEET1, SPACESHIP_SPRITE_COUNT);
+		gameMode = ObjectCollection.getGameManagement().getGameMode();
 	}
 	
 	@Override
@@ -162,10 +165,10 @@ public class SpaceShip extends Entity implements ConstantValues
 		switch(type)
 		{
 			case 0:
-				LaserCannon laserCannon = new LaserCannon(gameMode, 0.0166f, 0.0333f);
+				LaserCannon laserCannon = new LaserCannon(this, 0.0166f, 0.0333f);
 				laserCannon.setPosition(rx + dimension.width/2 - laserCannon.getDimension().width/2,
 						ry - dimension.height/2);
-				ObjectCollection.getEntityManagement().addEntity(laserCannon);
+				EntityManagement.addEntity(laserCannon);
 				gameMode.totalTimesShot++;
 				gameMode.timesShot++;
 				ammo--;
@@ -209,34 +212,26 @@ public class SpaceShip extends Entity implements ConstantValues
 		setPosition(defaultPosX*Options.SCREEN_WIDTH, Options.SCREEN_HEIGHT+this.getDimension().height);
 		movingUp = true;
 	}
-	
-	@Override
-	public int calculateScore()
-	{
-		// TODO Auto-generated method stub
-		return 0;
-	}
 
 	@Override
-	public boolean inCollision(Entity e) 
+	public boolean inCollision() 
 	{
-		if(e instanceof Wall)
+		if(ObjectCollection.getGameManagement().getWall().isTouching(this) == true)
 		{
-			Wall w = (Wall) e;
-			
-			if(this.getDimension().getWidth() + rx >= w.getDimension().width)
+			if(this.getDimension().getWidth() + rx >= ObjectCollection.getGameManagement().getWall().getDimensions().width)
 			{
 				vx = 0;
-				rx = w.getDimension().width - (int)getDimension().getWidth();
+				rx = (float) (ObjectCollection.getGameManagement().getWall().getDimensions().width - this.getDimension().getWidth());
 				return true;
 			}
-			if(rx <= 0)
+			if(rx <= ObjectCollection.getGameManagement().getWall().getDimensions().x)
 			{
 				vx = 0;
 				rx = 0;
 				return true;
 			}
 		}
+
 		return false;
 	}
 

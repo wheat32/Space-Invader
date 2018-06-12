@@ -5,13 +5,18 @@ import java.awt.Graphics2D;
 public interface GraphicsListener
 {
 	/**
-	 * <b>This method gets called every frame and passes the graphics context and elapsed time since last call.</b>
+	 * <b>This method gets called every frame and passes the graphics context.</b>
 	 * <p>
 	 * This should only be used for graphic elements that must be updated or drawn every frame.
 	 * 
 	 * @param gfx - The Graphic2D element used during runtime
-	 * @param elapsedTime - The time elapsed since the last call
-	 * @param resized - If the game was resized in the last frame
 	 */
-	void graphicsCall(Graphics2D gfx, boolean resized);
+	void graphicsCall(Graphics2D gfx);
+	
+	/***
+	 * <b>This method gets called every frame the window resizes or resolution changes.</b>
+	 * @param oldWidth - The resolution width before the change
+	 * @param oldHeight - The resolution height before the change
+	 */
+	void resize(int oldWidth, int oldHeight);
 }

@@ -37,6 +37,8 @@ public class GameManagementUtils implements ConstantValues
 				game = new InfinityMode();
 				game.startGame();
 				break;
+			default:
+				throw new RuntimeException("GameManagementUtils | Unknown gamemode type: " + this.gameType + ".");
 		}
 	}
 	
@@ -70,6 +72,11 @@ public class GameManagementUtils implements ConstantValues
 		return wpnCoolMod;
 	}
 	
+	public GameMode getGameMode()
+	{
+		return game;
+	}
+	
 	public boolean getInGame()
 	{
 		return game.getInGame();
@@ -78,5 +85,10 @@ public class GameManagementUtils implements ConstantValues
 	public GameStatus getGameStatus()
 	{
 		return (game == null) ? GameStatus.IN_GAME : game.getStatus();
+	}
+	
+	public Wall getWall()
+	{
+		return game.getWall();
 	}
 }

@@ -8,13 +8,14 @@ import entities.players.SpaceShip;
 import entities.shields.ShipShield;
 import input.KeyInputManagement;
 import io.InGamePrints;
-import miscEntities.Wall;
 import system.Audio;
 import system.Audio.Tracks;
 import system.Options;
 import utils.ConstantValues;
+import utils.EntityManagement;
 import utils.GameManagementUtils.GameStatus;
 import utils.ObjectCollection;
+import utils.Wall;
 
 /*
  * For infinity mode:
@@ -56,12 +57,11 @@ public class InfinityMode extends GameMode implements ConstantValues
 	@Override
 	protected void initEntitySetUp()
 	{
-		wall = new Wall(1.0f, 1.0f);
-		ObjectCollection.getEntityManagement().addEntity(wall);
-		ship = new SpaceShip(this, 0.05f, 0.05f);
+		wall = new Wall(0f, 0f, 1.0f, 1.0f);
+		ship = new SpaceShip(0.05f, 0.05f);
 		ship.setDefaultPosition(Options.SCREEN_WIDTH/2 - ship.getDimension().width,
 				(Options.SCREEN_HEIGHT/screenSteps)*(screenSteps-2));
-		ObjectCollection.getEntityManagement().addEntity(ship);
+		EntityManagement.addEntity(ship);
 	}
 	
 	private Runnable startNextRound = new Runnable()
@@ -121,16 +121,16 @@ public class InfinityMode extends GameMode implements ConstantValues
 		{
 			case 0://Normal wave
 				numberInPack = 4 * ((super.level < 3) ? 9 + super.level : 12);
-				aliens = new AlienPack(this, numberInPack);
-				ObjectCollection.getEntityManagement().addEntity(aliens);
+				aliens = new AlienPack(numberInPack);
+				EntityManagement.addEntity(aliens);
 				break;
 			case 1://Boss
-				boss = new BossAlien(this, ship, 0.4f, 0.4f);
+				boss = new BossAlien(ship, 0.4f, 0.4f);
 				if(boss.hasShield() == true)
 				{
 					((BossAlien) boss).setShield(new ShipShield(boss));
 				}
-				ObjectCollection.getEntityManagement().addEntity(boss);
+				EntityManagement.addEntity(boss);
 				break;
 			default:
 				throw new RuntimeException(roundType + " is an invalid round type for Infinity Mode.");
@@ -142,7 +142,7 @@ public class InfinityMode extends GameMode implements ConstantValues
 	{
 		System.out.println("InfinityMode: startGame called.");
 		super.startGame();
-		ObjectCollection.getEntityManagement().removeAllEntities(true, true);
+		EntityManagement.removeAllEntities(true);
 		gamePrints = new InGamePrints(this);
 		Audio.openClips(new Tracks[] {Tracks.BGM1, Tracks.BGM3, Tracks.BossBGM1, Tracks.Victory1, Tracks.Victory2, Tracks.Lose1});
 		boss = null;
@@ -159,9 +159,8 @@ public class InfinityMode extends GameMode implements ConstantValues
 			case 0://Normal wave
 				if(aliens instanceof AlienPack == true)
 				{
-					if(((AlienPack) aliens).getAliensAlive() == 0)//Won normal round
+					if(((AlienPack) aliens).getAliensAlive() == 0)//Won normal round//TODO make this more universal
 					{
-						score += aliens.calculateScore();
 						status = GameStatus.BIG_WIN;//TODO change this back to WIN
 						endRound();
 					}
@@ -183,7 +182,7 @@ public class InfinityMode extends GameMode implements ConstantValues
 		switch(status)
 		{
 			case WIN:
-				ObjectCollection.getEntityManagement().removeAllEntities(false, false);
+				EntityManagement.removeAllEntities(false);
 				break;
 			case LOSE:
 				break;

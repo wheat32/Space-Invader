@@ -3,7 +3,7 @@ package strings;
 public interface ChangeLogs
 {
 	public final String _0_3_0 = "<b>Update 0.3.0 contains the following changes:</b>\n\n"
-			+ "- Roughly 90% of the code has been rewritten and split into several new classes (was 15, is now 38).\n"
+			+ "- Roughly 95% of the code has been rewritten and split into several new classes (was 15, is now 38).\n"
 			+ "- Implemented a visual changelog.\n"
 			+ "- Endless Mode has been renamed to Infinity Mode.\n"
 			+ "- The main menu has been completely reworked, adding new submenus, new menu options, and customization options for Infinity Mode.\n"
@@ -13,13 +13,20 @@ public interface ChangeLogs
 			+ "- A new music track was added which plays before the first round in Infinity Mode.\n"
 			+ "- Rewrote many parts of the Audio class and changed how music is played and loaded into memory.\n"
 			+ "- Optimized all entities' code.\n"
-			+ "- Added capability to save user preferences (such as resolution, frame limit, and audio volume).\n"
-			+ "- Framework for mouse controls has been added.";
+			+ "- Added capability to save user preferences (such as resolution, refresh rate, and audio volume).\n"
+			+ "- Framework for mouse controls has been added.\n"
+			+ "- The methodidology for rendering has been redone.\n"
+			+ "- Rendering layers have been added for consistant layering on the screen.\n"
+			+ "- Audio volume now scales linearly.";
+	
+	public final String _0_3_X = "<b>Upcoming update 0.3.X will contain the following changes:</b>\n\n"
+			+ "- Functional mouse controls for the menu.\n"
+			+ "- Overhauled the functionality of the Wall.\n"
+			+ "<i>There may be more to add as development continues.</i>";
 	
 	public final String _0_4_0 = "<b>Upcoming update 0.4.0 will contain the following changes:</b>\n\n"
-			+ "- Functional mouse controls for the menu.\n"
+			+ "- LWJGL will be included and used. This will increase the performance overhead.\n"
 			+ "- Multithreading support.\n"
-			+ "- Overhauled the functionality of the Wall.\n"
 			+ "<i>There may be more to add as development continues.</i>";
 	
 	public final String _0_5_0 = "<b>Upcoming update 0.5.0 will contain the following changes:</b>\n\n"

@@ -5,18 +5,18 @@ import java.util.Random;
 import entities.Entity;
 import entities.Sprite;
 import entities.players.SpaceShip;
-import gameModes.GameMode;
-import miscEntities.Wall;
 import system.Options;
 import system.Time;
 import utils.ConstantValues;
+import utils.EntityManagement;
 import utils.ObjectCollection;
+import utils.Wall;
 
 public class SimpleEnemyLaserCannon extends Projectile implements ConstantValues 
 {
-	public SimpleEnemyLaserCannon(GameMode gameMode, Entity target, float screenDivX, float screenDivY)
+	public SimpleEnemyLaserCannon(Entity target, Entity origin, float screenDivX, float screenDivY)
 	{
-		super(gameMode, target, screenDivX, screenDivY);
+		super(target, screenDivX, screenDivY, RenderLayer.SPRITE2, origin.entityFaction);
 		super.setHealth(1);
 		super.damage = 1;
 		maxVelocity = 0.0008f;
@@ -47,7 +47,7 @@ public class SimpleEnemyLaserCannon extends Projectile implements ConstantValues
 
 	public void killSelf()
 	{
-		ObjectCollection.getEntityManagement().removeEntity(this);
+		EntityManagement.removeEntity(this);
 	}
 	
 	private void setVelocities()
@@ -55,9 +55,9 @@ public class SimpleEnemyLaserCannon extends Projectile implements ConstantValues
 		Random rand = new Random();
 		short range = 160;
 		
-		if(range - gameMode.level > 80)
+		if(range - ObjectCollection.getGameManagement().getGameMode().level > 80)
 		{
-			range -= gameMode.level * 2;
+			range -= ObjectCollection.getGameManagement().getGameMode().level * 2;
 		}
 		else
 		{
@@ -72,35 +72,25 @@ public class SimpleEnemyLaserCannon extends Projectile implements ConstantValues
 		vy = 0.00004f;
 		vx = ((target.getRx() + target.getDimension().width/2)/Options.SCREEN_WIDTH - (rx + getDimension().width/2)/Options.SCREEN_WIDTH) / 1400 + accuracy;
 	}
-	
-	@Override
-	public int calculateScore()
-	{
-		// TODO Auto-generated method stub
-		return 0;
-	}
 
 	@Override
-	public boolean inCollision(Entity e) 
+	public boolean inCollision() 
 	{
-		if(e instanceof Wall)
+		if(ObjectCollection.getGameManagement().getWall().isOutside(this) == true)
 		{
-			Wall w = (Wall) e;
-			
-			if(!getBounds().intersects(w.getBounds()))
-			{
-				ObjectCollection.getEntityManagement().removeEntity(this);
-				return true;
-			}
+			EntityManagement.removeEntity(this);
+			return true;
 		}
-		if(e instanceof SpaceShip)
+		
+		for(Entity e : EntityManagement.getEntities())
 		{
-			SpaceShip s = (SpaceShip) e;
-			
-			if(getBounds().intersects(s.getBounds()))
+			if(e.entityFaction == target.entityFaction)
 			{
-				ObjectCollection.getEntityManagement().removeEntity(this);
-				return true;
+				if(getBounds().intersects(e.getBounds()))
+				{
+					EntityManagement.removeEntity(this);
+					return true;
+				}
 			}
 		}
 		return false;

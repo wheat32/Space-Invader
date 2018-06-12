@@ -1,17 +1,23 @@
 package entities.bosses;
 
 import entities.Entity;
+import entities.EntityTags.EntityFaction;
 import entities.shields.ShipShield;
-import gameModes.GameMode;
+import utils.ConstantValues.RenderLayer;
 
 public abstract class Boss extends Entity
 {
 	protected Entity enemy;//The boss' enemy
 	protected ShipShield shield;
 	
-	public Boss(GameMode gameMode, Entity enemy, float screenDivX, float screenDivY)
+	public Boss(Entity enemy, float screenDivX, float screenDivY, RenderLayer renderLayer, EntityFaction entityFaction)
 	{
-		super(gameMode, screenDivX, screenDivY);
+		this(enemy, screenDivX, screenDivY, renderLayer.layer, entityFaction);
+	}
+	
+	public Boss(Entity enemy, float screenDivX, float screenDivY, byte renderLayer, EntityFaction entityFaction)
+	{
+		super(screenDivX, screenDivY, renderLayer, entityFaction);
 		this.enemy = enemy;
 	}
 	

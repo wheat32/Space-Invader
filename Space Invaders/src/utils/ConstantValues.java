@@ -2,18 +2,41 @@ package utils;
 
 public interface ConstantValues 
 {
-	byte UP_KEY = 0x08;
-	byte LEFT_KEY = 0x04;
-	byte DOWN_KEY = 0x02;
-	byte RIGHT_KEY = 0x01;
-	byte SPACE_KEY = 0x16;
+	/**
+	 * Note: Particle layers are always before a sprite layer of the same number. Ex: SPRITE1 is before PARTICLE2 but after PARTICLE1.
+	 * @author Wheat
+	 *
+	 */
+	public enum RenderLayer
+	{
+		BACKGROUND1((byte) 1),
+		BACKGROUND2((byte) 3),
+		BACKGROUND3((byte) 5),
+		PARTICLE1((byte) 10),
+		SPRITE1((byte) 12),
+		PARTICLE2((byte) 16),
+		SPRITE2((byte) 18),
+		PARTICLE3((byte) 22),
+		SPRITE3((byte) 24),
+		PARTICLE4((byte) 28),
+		GUI1((byte) 40),
+		GUI2((byte) 45),
+		GUI3((byte) 50);
+		
+		public final byte layer;
+		
+		private RenderLayer(byte layerNum)
+		{
+			layer = layerNum;
+		}
+	}
 	
-	final short ALIEN_SPRITE_COUNT = 3;
-	final short SPACESHIP_SPRITE_COUNT = 3;
-	final short MISSILE_SPRITE_COUNT = 3;
-	final short EXPLOSION_SPRITE_COUNT = 14;
-	final short SPACE_MINE_COUNT = 2;
-	final short SHOCKWAVE_SPRITE_COUNT = 2;
+	final byte ALIEN_SPRITE_COUNT = 3;
+	final byte SPACESHIP_SPRITE_COUNT = 3;
+	final byte MISSILE_SPRITE_COUNT = 3;
+	final byte EXPLOSION_SPRITE_COUNT = 14;
+	final byte SPACE_MINE_COUNT = 2;
+	final byte SHOCKWAVE_SPRITE_COUNT = 2;
 	
 	//[START] --- SPRITE STRINGS --- \\
 	final String ALIENSPRITESHEET1 = "sprites/alienSpriteSheet1.png";
@@ -35,4 +58,5 @@ public interface ConstantValues
 	//[START] --- IMAGES --- \\
 	final String SPACEBG1 = "images/spaceBG1.png";
 	final String DIALOGUE_BOX = "images/dialogue_box.png";
+	//[END] --- IMAGES --- \\
 }

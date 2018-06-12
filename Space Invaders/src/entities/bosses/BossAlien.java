@@ -3,36 +3,42 @@ package entities.bosses;
 import java.util.Random;
 
 import entities.Entity;
+import entities.EntityTags.EntityFaction;
 import entities.Sprite;
 import entities.projectiles.LaserCannon;
 import entities.projectiles.SimpleEnemyLaserCannon;
 import entities.projectiles.SpaceMine;
 import entities.shields.ShipShield;
 import gameModes.GameMode;
-import miscEntities.Wall;
 import system.Audio;
 import system.Audio.Sfxs;
 import system.Options;
 import system.Time;
 import updates.UpdateListener;
 import utils.ConstantValues;
+import utils.EntityManagement;
 import utils.ObjectCollection;
+import utils.Wall;
 
 public class BossAlien extends Boss implements ConstantValues, UpdateListener
 {
 	private Random rand = new Random();
 	private ShipShield shield;
+	private GameMode gameMode;
+	
 	private float vx;
 	private int timesToFire = 0;
 	private int normalFireDelay = 1600;
 	private short intervalForMineCheck = 6000;
 	private float failedMineChecks = 0.0f;
+	private long timeBonusLength = 0;
 	
-	public BossAlien(GameMode gameMode, Entity enemy, float screenDivX, float screenDivY)
+	public BossAlien(Entity enemy, float screenDivX, float screenDivY)
 	{
-		super(gameMode, enemy, screenDivX, screenDivY);
+		super(enemy, screenDivX, screenDivY, RenderLayer.SPRITE1, EntityFaction.ALIEN);
 		sprite = new Sprite(BOSSALIENSPRITESHEET1, ALIEN_SPRITE_COUNT);
 		ObjectCollection.getRenderer().addUpdateListener(this);
+		gameMode = ObjectCollection.getGameManagement().getGameMode();
 		
 		setPosition(Options.SCREEN_WIDTH / 2 - dimension.width / 2, dimension.height / 3 * -1);
 		activate((short) 2);
@@ -65,7 +71,7 @@ public class BossAlien extends Boss implements ConstantValues, UpdateListener
 		{
 			gameMode.killedAliens++;
 			gameMode.score += calculateScore();
-			ObjectCollection.getEntityManagement().removeEntity(this);
+			EntityManagement.removeEntity(this);
 			//System.out.println("Score gained from death hit: " + calculateScore(true));
 			return;
 		}
@@ -142,15 +148,15 @@ public class BossAlien extends Boss implements ConstantValues, UpdateListener
 				//System.out.println("Boss fired");
 				this.active = ((short) 3);
 				timesToFire--;
-				SimpleEnemyLaserCannon enemyMissile = new SimpleEnemyLaserCannon(gameMode, enemy, 0.0166f, 0.0333f);
+				SimpleEnemyLaserCannon enemyMissile = new SimpleEnemyLaserCannon(enemy, this, 0.0166f, 0.0333f);
 				enemyMissile.setPosition(rx + dimension.width/2, ry + (dimension.height/8)*4);
-				ObjectCollection.getEntityManagement().addEntity(enemyMissile);
+				EntityManagement.addEntity(enemyMissile);
 				Audio.playSound(Sfxs.EnemyShoot1);
 				break;
 			case 1://Mine
-				SpaceMine mine = new SpaceMine(gameMode, enemy, 0.06f, 0.06f);
+				SpaceMine mine = new SpaceMine(enemy, this, 0.06f, 0.06f);
 				mine.setPosition(rx + dimension.width/2, ry + (dimension.height/8)*4);
-				ObjectCollection.getEntityManagement().addEntity(mine);
+				EntityManagement.addEntity(mine);
 				break;
 		}
 		
@@ -183,48 +189,55 @@ public class BossAlien extends Boss implements ConstantValues, UpdateListener
 	}
 
 	@Override
-	public boolean inCollision(Entity e) 
+	public boolean inCollision() 
 	{
-		if(e instanceof Wall)//TODO finish this
+		if(ObjectCollection.getGameManagement().getWall().isTouching(this) == true)
 		{
-			if(rx < 0)
-			{
-				vx = Math.abs(vx);
-				rx += Math.abs(rx);
-			}
-			else if(rx > Options.SCREEN_WIDTH - this.getDimension().width)
+			if(this.getDimension().getWidth() + rx >= ObjectCollection.getGameManagement().getWall().getDimensions().width)
 			{
 				vx = -Math.abs(vx);
 				rx -= rx+this.getDimension().width-Options.SCREEN_WIDTH;
+				return true;
 			}
-		}
-		if(e instanceof LaserCannon)
-		{
-			LaserCannon m = (LaserCannon) e;
-			
-			if(isDead() == false && getBounds().intersects(m.getBounds()) && shield.isRecharging() == true)//Whether the alien is dead or not is evaluated in the draw method
+			if(rx <= ObjectCollection.getGameManagement().getWall().getDimensions().x)
 			{
-				ObjectCollection.getEntityManagement().removeEntity(m);
-				currHealth -= 100;
-				
-				if(currHealth < 0)
-				{
-					currHealth = 0;
-				}
-				
-				gameMode.score += calculateScore();
-				Audio.playSound(Sfxs.Hit);
-				//System.out.println("Score gained from normal hit: " + calculateScore(false));
+				vx = Math.abs(vx);
+				rx += Math.abs(rx);
 				return true;
 			}
 		}
+
+		for(Entity e : EntityManagement.getEntities())
+		{
+			if(e instanceof LaserCannon)
+			{
+				LaserCannon m = (LaserCannon) e;
+				
+				if(isDead() == false && getBounds().intersects(m.getBounds()) && shield.isRecharging() == true)//Whether the alien is dead or not is evaluated in the draw method
+				{
+					EntityManagement.removeEntity(m);
+					currHealth -= 100;
+					
+					if(currHealth < 0)
+					{
+						currHealth = 0;
+					}
+					
+					gameMode.score += calculateScore();
+					Audio.playSound(Sfxs.Hit);
+					//System.out.println("Score gained from normal hit: " + calculateScore(false));
+					return true;
+				}
+			}
+		}
+		
 		return false;
 	}
 	
 	public void setShield(ShipShield shield)
 	{
 		this.shield = shield;
-		ObjectCollection.getEntityManagement().addEntity(shield);
+		EntityManagement.addEntity(shield);
 	}
 	
 	public ShipShield getShield()

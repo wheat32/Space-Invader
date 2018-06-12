@@ -42,11 +42,11 @@ public class Background extends JFrame implements ConstantValues, GraphicsListen
 			System.err.println("Failed to load sprite.");
 		}
 		
-		ObjectCollection.getRenderer().addGraphicsListener(this);
+		ObjectCollection.getRenderer().addGraphicsListener(this, RenderLayer.BACKGROUND1);
 	}
 	
 	@Override
-	public void graphicsCall(Graphics2D gfx, boolean resized)
+	public void graphicsCall(Graphics2D gfx)
 	{	
 		gfx.setColor(Color.BLACK);
 		gfx.fillRect(0, 0, Options.SCREEN_WIDTH, Options.SCREEN_HEIGHT);	

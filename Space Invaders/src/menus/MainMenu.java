@@ -530,17 +530,12 @@ public class MainMenu implements ConstantValues, GraphicsListener, UpdateListene
 	}
 
 	@Override
-	public void graphicsCall(Graphics2D gfx, boolean resized)
+	public void graphicsCall(Graphics2D gfx)
 	{
 		//If not in the main menu, return out immediately
 		if(inMainMenu == false)
 		{
 			return;
-		}
-		
-		if(resized == true)
-		{
-			setUpMsgs();
 		}
 		
 		Color foreground = gfx.getColor();
@@ -585,7 +580,7 @@ public class MainMenu implements ConstantValues, GraphicsListener, UpdateListene
 			ObjectCollection.getBackground();
 			setUpMsgs();
 			selection = 1;
-			ObjectCollection.getRenderer().addGraphicsListener(this);
+			ObjectCollection.getRenderer().addGraphicsListener(this, RenderLayer.GUI1);
 			ObjectCollection.getRenderer().addUpdateListener(this);
 			Audio.openClips(new Tracks[] {Tracks.BGM2});
 			Audio.changeTrack(Tracks.BGM2);
@@ -595,5 +590,11 @@ public class MainMenu implements ConstantValues, GraphicsListener, UpdateListene
 			ObjectCollection.getRenderer().removeGraphicsListener(this);
 			ObjectCollection.getRenderer().removeUpdateListener(this);
 		}
+	}
+
+	@Override
+	public void resize(int oldWidth, int oldHeight)
+	{
+		setUpMsgs();
 	}
 }

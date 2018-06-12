@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import system.Options;
 import system.Time;
 import updates.GraphicsListener;
+import utils.ConstantValues.RenderLayer;
 import utils.ObjectCollection;
 
 public class DebugPrints implements GraphicsListener
@@ -22,7 +23,7 @@ public class DebugPrints implements GraphicsListener
 	
 	public DebugPrints()
 	{
-		ObjectCollection.getRenderer().addGraphicsListener(this);
+		ObjectCollection.getRenderer().addGraphicsListener(this, RenderLayer.GUI3);
 	}
 	
 	private void printGraphics(Graphics2D gfx)
@@ -52,10 +53,16 @@ public class DebugPrints implements GraphicsListener
 	}
 
 	@Override
-	public void graphicsCall(Graphics2D gfx, boolean resized)
+	public void graphicsCall(Graphics2D gfx)
 	{
 		Font oldFont = gfx.getFont();
 		printGraphics(gfx);
 		gfx.setFont(oldFont);
+	}
+
+	@Override
+	public void resize(int oldWidth, int oldHeight)
+	{
+		return;
 	}
 }
