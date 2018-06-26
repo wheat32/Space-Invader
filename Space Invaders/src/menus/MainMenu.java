@@ -8,6 +8,7 @@ import java.util.HashMap;
 
 import input.KeyInputManagement;
 import io.FontManagement;
+import spaceBackgrounds.Background;
 import strings.MainMenuStrs;
 import system.Audio;
 import system.Audio.Sfxs;
@@ -577,18 +578,18 @@ public class MainMenu implements ConstantValues, GraphicsListener, UpdateListene
 		//Make sure the main menu music is on
 		if(inMainMenu == true)
 		{
-			ObjectCollection.getBackground();
+			new Background();
 			setUpMsgs();
 			selection = 1;
-			ObjectCollection.getRenderer().addGraphicsListener(this, RenderLayer.GUI1);
-			ObjectCollection.getRenderer().addUpdateListener(this);
+			ObjectCollection.getMainLoop().addGraphicsListener(this, RenderLayer.GUI1);
+			ObjectCollection.getMainLoop().addUpdateListener(this);
 			Audio.openClips(new Tracks[] {Tracks.BGM2});
 			Audio.changeTrack(Tracks.BGM2);
 		}
 		else
 		{
-			ObjectCollection.getRenderer().removeGraphicsListener(this);
-			ObjectCollection.getRenderer().removeUpdateListener(this);
+			ObjectCollection.getMainLoop().removeGraphicsListener(this);
+			ObjectCollection.getMainLoop().removeUpdateListener(this);
 		}
 	}
 

@@ -7,24 +7,28 @@ import entities.shields.ShipShield;
 import gameModes.GameMode;
 import system.Options;
 import system.Time;
+import updates.CollisionListener;
+import updates.UpdateListener;
 import utils.ConstantValues;
 import utils.EntityManagement;
 import utils.ObjectCollection;
+import utils.Wall;
 
-public class LaserCannon extends Projectile implements ConstantValues 
+public class LaserCannon extends Projectile implements ConstantValues, UpdateListener, CollisionListener
 {
 	private GameMode gameMode;
 	
 	public LaserCannon(Entity origin, float screenDivX, float screenDivY)
 	{
-		super(screenDivX, screenDivY, RenderLayer.SPRITE2, origin.entityFaction);
+		super(screenDivX, screenDivY, new Sprite(PROJECTILESPRITESHEET1, MISSILE_SPRITE_COUNT), RenderLayer.SPRITE2, origin.entityFaction);
 		super.damage = 100;
 		super.setHealth(1);
 		maxVelocity = -0.0013f;
 		acceleration = -0.00002f;
-		sprite = new Sprite(PROJECTILESPRITESHEET1, MISSILE_SPRITE_COUNT);
 		vx = -0.00012f;
 		gameMode = ObjectCollection.getGameManagement().getGameMode();
+		ObjectCollection.getMainLoop().addUpdateListener(this);
+		ObjectCollection.getMainLoop().addCollisionListener(this);
 	}
 
 	@Override
@@ -41,58 +45,64 @@ public class LaserCannon extends Projectile implements ConstantValues
 		
 		//System.out.println("MISSILE: py = " + py + " | ry = " + ry + " | vy = " + vy + " | SCREEN_HEIGHT: " + Stats.SCREEN_HEIGHT);
 	}
+	
+	@Override
+	public void update()
+	{
+		move();
+	}
 
 	@Override
-	public boolean inCollision() 
+	public void onCollision(CollisionListener o) 
 	{
 		if(this.isDead() == true)
 		{
-			return false;
-		}
-		else if(gameMode.getWall().isOutside(this) == true)
-		{
-			//System.out.println("LaserCannon hit wall");
-			EntityManagement.removeEntity(this);
-			this.renderUseless();
-			return true;
+			return;
 		}
 		
-		for(Entity e : EntityManagement.getEntities())
+		if(o instanceof Wall)
 		{
-			if(e instanceof ShipShield)
+			if(((Wall) o).isOutside(this) == true)
 			{
-				ShipShield ss = (ShipShield) e;
-				
-				if(this.getBounds().intersects(ss.getBounds()) == true && ss.isRecharging() == false)
-				{
-					EntityManagement.removeEntity(this);
-					gameMode.increaseHits();
-					this.renderUseless();
-					return true;
-				}
+				//System.out.println("LaserCannon hit wall");
+				EntityManagement.removeEntity(this);
+				this.renderUseless();
 			}
-			else if(e instanceof SpaceMine)
-			{
-				SpaceMine sm = (SpaceMine) e;
-				
-				if(this.getBounds().intersects(sm.getBounds()) == true && sm.isBlowingUp() == false)
-				{
-					EntityManagement.removeEntity(this);
-					gameMode.increaseHits();
-					this.renderUseless();
-					return true;
-				}
-			}
-			else if(e.entityFaction != EntityFaction.FRIENDLY && getBounds().intersects(e.getBounds()))
+			return;
+		}
+		else if(o instanceof ShipShield)
+		{
+			if(((ShipShield) o).isRecharging() == false)
 			{
 				EntityManagement.removeEntity(this);
 				gameMode.increaseHits();
 				this.renderUseless();
-				return true;
+				return;
 			}
 		}
-		
-		//The check if missile is colliding with an alien happens in the MarchingAlien class.
-		return false;
+		else if(o instanceof SpaceMine)
+		{
+			if(((SpaceMine) o).isBlowingUp() == false)
+			{
+				EntityManagement.removeEntity(this);
+				gameMode.increaseHits();
+				this.renderUseless();
+				return;
+			}
+		}
+		else if(o instanceof Entity)
+		{
+			Entity e = (Entity) o;
+			
+			if(e.entityFaction != EntityFaction.FRIENDLY)
+			{
+				/*System.out.println("LaserCannon | Collided with " + e.toString() + " " + ((MarchingAlien) e).getNumInRow() + "\n" 
+						+ "\tLaserCannon:   {" + this.getBounds() + "}\n"
+						+ "\tMarchingAlien: {" + e.getBounds() + "}");*/
+				EntityManagement.removeEntity(this);
+				gameMode.increaseHits();
+				//this.renderUseless();
+			}
+		}
 	}
 }

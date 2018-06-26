@@ -4,25 +4,25 @@ import java.util.Random;
 
 import entities.Entity;
 import entities.Sprite;
-import entities.players.SpaceShip;
 import system.Options;
 import system.Time;
+import updates.CollisionListener;
 import utils.ConstantValues;
 import utils.EntityManagement;
 import utils.ObjectCollection;
 import utils.Wall;
 
-public class SimpleEnemyLaserCannon extends Projectile implements ConstantValues 
+public class SimpleEnemyLaserCannon extends Projectile implements ConstantValues, CollisionListener
 {
 	public SimpleEnemyLaserCannon(Entity target, Entity origin, float screenDivX, float screenDivY)
 	{
-		super(target, screenDivX, screenDivY, RenderLayer.SPRITE2, origin.entityFaction);
+		super(target, screenDivX, screenDivY, new Sprite(ENEMYPROJECTILESPRITESHEET1, MISSILE_SPRITE_COUNT), RenderLayer.SPRITE2, origin.entityFaction);
 		super.setHealth(1);
 		super.damage = 1;
 		maxVelocity = 0.0008f;
 		acceleration = 0.000008f;
-		sprite = new Sprite(ENEMYPROJECTILESPRITESHEET1, MISSILE_SPRITE_COUNT);
 		setVelocities();
+		ObjectCollection.getMainLoop().addCollisionListener(this);
 	}
 
 	@Override
@@ -74,25 +74,24 @@ public class SimpleEnemyLaserCannon extends Projectile implements ConstantValues
 	}
 
 	@Override
-	public boolean inCollision() 
+	public void onCollision(CollisionListener o) 
 	{
-		if(ObjectCollection.getGameManagement().getWall().isOutside(this) == true)
+		if(o instanceof Wall)
 		{
-			EntityManagement.removeEntity(this);
-			return true;
-		}
-		
-		for(Entity e : EntityManagement.getEntities())
-		{
-			if(e.entityFaction == target.entityFaction)
+			if(((Wall) o).isOutside(this) == true)
 			{
-				if(getBounds().intersects(e.getBounds()))
-				{
-					EntityManagement.removeEntity(this);
-					return true;
-				}
+				EntityManagement.removeEntity(this);
+				return;
 			}
 		}
-		return false;
+		
+		if(o instanceof Entity)
+		{
+			if(((Entity) o).entityFaction == target.entityFaction)
+			{
+				EntityManagement.removeEntity(this);
+				return;
+			}
+		}
 	}
 }

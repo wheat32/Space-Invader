@@ -2,7 +2,7 @@ package strings;
 
 public interface MainMenuStrs
 {
-	public final String TITLE = "Space Invaders";
+	public final String TITLE = "Space Pioneers";
 	public final String[] SUBTITLES = {"Main Menu", "Arcade Mode", "Options", "Infinity Mode"};
 	
 	public final String[] DIFFICULTIES = {"Very Easy", "Easy", "Normal", "Hard", "Nightmare", "Custom"};

@@ -4,11 +4,13 @@ import entities.Entity;
 import entities.EntityTags.EntityFaction;
 import entities.Sprite;
 import gameModes.GameMode;
+import updates.CollisionListener;
 import utils.ConstantValues;
 import utils.EntityManagement;
 import utils.ObjectCollection;
+import utils.Wall;
 
-public class MarchingAlien extends Entity implements ConstantValues 
+public class MarchingAlien extends Entity implements ConstantValues, CollisionListener
 {
 	private short numInRow = 0;
 	private AlienPack alienPack;
@@ -17,11 +19,11 @@ public class MarchingAlien extends Entity implements ConstantValues
 	
 	public MarchingAlien(float screenDivX, float screenDivY, short numInRow)
 	{
-		super(screenDivX, screenDivY, RenderLayer.SPRITE1, EntityFaction.ALIEN);
-		sprite = new Sprite(ALIENSPRITESHEET1, ALIEN_SPRITE_COUNT);
+		super(screenDivX, screenDivY, new Sprite(ALIENSPRITESHEET1, ALIEN_SPRITE_COUNT), RenderLayer.SPRITE1, EntityFaction.ALIEN);
 		this.numInRow = numInRow;
 		timeBonusLength = 25000 + System.currentTimeMillis();//25 seconds
 		gameMode = ObjectCollection.getGameManagement().getGameMode();
+		ObjectCollection.getMainLoop().addCollisionListener(this);
 	}
 	
 	public void setAlienPack(AlienPack alienPack)
@@ -54,26 +56,25 @@ public class MarchingAlien extends Entity implements ConstantValues
 	}
 
 	@Override
-	public boolean inCollision() 
+	public void onCollision(CollisionListener o) 
 	{	
-		if(ObjectCollection.getGameManagement().getWall().isTouching(this) == true)
+		if(o instanceof Wall)
 		{
-			if(alienPack != null)
+			if(((Wall) o).isTouching(this) == true)
 			{
-				alienPack.moveDown(this);
-				return true;
+				if(alienPack != null)
+				{
+					alienPack.moveDown(this);
+					return;
+				}
 			}
 		}
-		
-		for(Entity e : EntityManagement.getEntities())
+		else if(o instanceof Entity)
 		{
-			if(e.entityFaction != EntityFaction.FRIENDLY)
-			{
-				continue;
-			}
+			Entity e = (Entity) o;
 			
-			if(this.getBounds().intersects(e.getBounds()) == true)
-			{	
+			if(e.entityFaction == EntityFaction.FRIENDLY)
+			{
 				if(this.reduceHealth(e.getDamage()) == true)
 				{
 					gameMode.killedAliens++;
@@ -88,11 +89,7 @@ public class MarchingAlien extends Entity implements ConstantValues
 						EntityManagement.removeEntity(this);
 					}
 				}
-				
-				return true;
 			}
 		}
-		
-		return false;
 	}
 }

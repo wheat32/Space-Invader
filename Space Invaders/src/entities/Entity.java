@@ -14,7 +14,7 @@ public abstract class Entity implements GraphicsListener
 {
 	protected float rx, ry;//positions params
 	protected float vx, vy;//velocity params
-	protected float px, py;//percentage accross screen params
+	protected float px, py;//percentage across screen params
 	
 	protected Dimension dimension = new Dimension();
 	protected float screenDivX, screenDivY;
@@ -30,16 +30,12 @@ public abstract class Entity implements GraphicsListener
 	
 	public Entity(EntityFaction entityFaction)
 	{
-		this.renderLayer = RenderLayer.SPRITE1.layer;
 		this.entityFaction = entityFaction;
-		ObjectCollection.getRenderer().addGraphicsListener(this, renderLayer);
 	}
 	
-	public Entity(RenderLayer renderLayer, EntityFaction entityFaction)
+	public Entity(Sprite sprite, RenderLayer renderLayer, EntityFaction entityFaction)
 	{
-		this.renderLayer = renderLayer.layer;
-		this.entityFaction = entityFaction;
-		ObjectCollection.getRenderer().addGraphicsListener(this, renderLayer);
+		this(-1f, -1f, sprite, RenderLayer.SPRITE1.layer, entityFaction);
 	}
 	
 	/**
@@ -47,9 +43,9 @@ public abstract class Entity implements GraphicsListener
 	 * @param screenDivX - How the screen should be divided in terms of X.
 	 * @param screenDivY - How the screen should be divided in terms of Y.
 	 */
-	public Entity(float screenDivX, float screenDivY, EntityFaction entityFaction)
+	public Entity(float screenDivX, float screenDivY, Sprite sprite, EntityFaction entityFaction)
 	{
-		this(screenDivX, screenDivY, RenderLayer.SPRITE1.layer, entityFaction);
+		this(screenDivX, screenDivY, sprite, RenderLayer.SPRITE1.layer, entityFaction);
 	}
 	
 	/**
@@ -58,9 +54,9 @@ public abstract class Entity implements GraphicsListener
 	 * @param screenDivY - How the screen should be divided in terms of Y.
 	 * @param renderLayer - The layer to be rendered on.
 	 */
-	public Entity(float screenDivX, float screenDivY, RenderLayer renderLayer, EntityFaction entityFaction)
+	public Entity(float screenDivX, float screenDivY, Sprite sprite, RenderLayer renderLayer, EntityFaction entityFaction)
 	{
-		this(screenDivX, screenDivY, renderLayer.layer, entityFaction);
+		this(screenDivX, screenDivY, sprite, renderLayer.layer, entityFaction);
 	}
 	
 	/**
@@ -69,18 +65,18 @@ public abstract class Entity implements GraphicsListener
 	 * @param screenDivY - How the screen should be divided in terms of Y.
 	 * @param renderLayer - The layer to be rendered on (byte).
 	 */
-	public Entity(float screenDivX, float screenDivY, byte renderLayer, EntityFaction entityFaction)
+	public Entity(float screenDivX, float screenDivY, Sprite sprite, byte renderLayer, EntityFaction entityFaction)
 	{
 		dimension = new Dimension((int) (Options.SCREEN_WIDTH*screenDivX), (int) (Options.SCREEN_HEIGHT*screenDivY));
 		this.screenDivX = screenDivX;
 		this.screenDivY = screenDivY;
+		this.sprite = sprite;
 		this.renderLayer = renderLayer;
 		this.entityFaction = entityFaction;
-		ObjectCollection.getRenderer().addGraphicsListener(this, renderLayer);
+		ObjectCollection.getMainLoop().addGraphicsListener(this, renderLayer);
 	}
 	
 	public abstract void move();
-	public abstract boolean inCollision();
 	
 	@Override
 	public void graphicsCall(Graphics2D gfx)
@@ -106,8 +102,20 @@ public abstract class Entity implements GraphicsListener
 		ry = Options.SCREEN_HEIGHT * percentageThroughY;
 	}
 	
-	//USE AS LITTLE AS POSSIBLE
+	/***
+	 * Should only be used for position (NOT COLLISION) related functions.
+	 * @return Rectangle - Returns rx, ry, rx+width, and ry+height
+	 */
 	public Rectangle getBounds()
+	{
+		return new Rectangle((int)rx, (int)ry, (int) (rx+dimension.width), (int) (ry+dimension.height));
+	}
+	
+	/**
+	 * Should only be used for collision (NOT POSITION) related functions.
+	 * @return Rectangle - Returns the rx, ry, width, and height of the entity.
+	 */
+	public Rectangle getCollider()
 	{
 		return new Rectangle((int)rx, (int)ry, dimension.width, dimension.height);
 	}
@@ -236,6 +244,11 @@ public abstract class Entity implements GraphicsListener
 		currHealth = health;
 	}
 	
+	/***
+	 * Receives the amount of damage the entity is taking and returns a boolean based off if the entity is dead after the health reduction.
+	 * @param damage
+	 * @return boolean - True if the entity is dead after the health reduction. False if not.
+	 */
 	public boolean reduceHealth(int damage)
 	{
 		currHealth -= damage;

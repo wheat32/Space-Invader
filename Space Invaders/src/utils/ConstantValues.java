@@ -32,6 +32,7 @@ public interface ConstantValues
 	}
 	
 	final byte ALIEN_SPRITE_COUNT = 3;
+	final byte BLUESHIELD_SPRITE_COUNT = 1;
 	final byte SPACESHIP_SPRITE_COUNT = 3;
 	final byte MISSILE_SPRITE_COUNT = 3;
 	final byte EXPLOSION_SPRITE_COUNT = 14;

@@ -3,8 +3,7 @@ package strings;
 public interface ChangeLogs
 {
 	public final String _0_3_0 = "<b>Update 0.3.0 contains the following changes:</b>\n\n"
-			+ "- Roughly 95% of the code has been rewritten and split into several new classes (was 15, is now 38).\n"
-			+ "- Implemented a visual changelog.\n"
+			+ "- Roughly 95-98% of the code has been rewritten and split into several new classes (was 15, is now 42).\n"
 			+ "- Endless Mode has been renamed to Infinity Mode.\n"
 			+ "- The main menu has been completely reworked, adding new submenus, new menu options, and customization options for Infinity Mode.\n"
 			+ "- The rendering pipeline has been rewritten and contains optimizations.\n"
@@ -16,10 +15,18 @@ public interface ChangeLogs
 			+ "- Added capability to save user preferences (such as resolution, refresh rate, and audio volume).\n"
 			+ "- Framework for mouse controls has been added.\n"
 			+ "- The methodidology for rendering has been redone.\n"
-			+ "- Rendering layers have been added for consistant layering on the screen.\n"
-			+ "- Audio volume now scales linearly.";
+			+ "- Rendering in layers have been added for consistant layering on the screen.\n"
+			+ "- Audio volume now scales linearly.\n"
+			+ "- The game speed is no longer tied to the frame rate.\n"
+			+ "- By default, the game now runs roughly at 60 FPS.\n"
+			+ "- Lots of minor bug fixes, timing issues, and graphical issues have been addressed.\n"
+			+ "(Note: Since nearly all of the code has been rewritten, it is basically a new engine framework. There will be many bugs that need to be addressed "
+			+ "before the port to LWJGL. Also, temporarily, the boss and the UI in the space fights have been removed. They will be added back with patches/updates.)";
 	
 	public final String _0_3_X = "<b>Upcoming update 0.3.X will contain the following changes:</b>\n\n"
+			+ "- Implement a visual changelog.\n"
+			+ "- Reintroduce the pause menu.\n"
+			+ "- Rewrite how sprites and animations are handled.\n"
 			+ "- Functional mouse controls for the menu.\n"
 			+ "- Overhauled the functionality of the Wall.\n"
 			+ "<i>There may be more to add as development continues.</i>";
@@ -29,12 +36,7 @@ public interface ChangeLogs
 			+ "- Multithreading support.\n"
 			+ "<i>There may be more to add as development continues.</i>";
 	
-	public final String _0_5_0 = "<b>Upcoming update 0.5.0 will contain the following changes:</b>\n\n"
-			+ "- Complete switch of the rendering system from Swing to JavaFX.\n"
-			+ "- Overhaul of the way everything is rendered to the screen (performance boost).\n"
-			+ "<i>There may be more to add as development continues.</i>";
-	
-	public final String _0_6_0 = "<b>Upcoming update 0.6.0 will contain the following changes:</b>\n\n"
+	public final String _0_5_0 = "<b>Upcoming update 0.6.0 will contain the following changes:</b>\n\n"
 			+ "<b>Gameplay</b>:\n"
 			+ "- Ships now have an \"Energy\" gauge. A ship's energy reserve will be delpeted by movement, activating an augment, firing your laser, etc. "
 			+ "Thanks to the power of newly developed \"Dragon Energy\" engines, quite a lot of energy can be outputted. Not only this, but it can "

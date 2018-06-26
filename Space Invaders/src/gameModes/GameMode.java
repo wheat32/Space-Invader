@@ -40,7 +40,7 @@ public abstract class GameMode implements UpdateListener
 	public GameMode()
 	{
 		gameManagement = ObjectCollection.getGameManagement();
-		ObjectCollection.getRenderer().addUpdateListener(this);
+		ObjectCollection.getMainLoop().addUpdateListener(this);
 	}
 	
 	protected abstract void resetStats();
@@ -128,10 +128,5 @@ public abstract class GameMode implements UpdateListener
 	public short getScreenSteps()
 	{
 		return screenSteps;
-	}
-	
-	public Wall getWall()
-	{
-		return wall;
 	}
 }

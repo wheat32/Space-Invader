@@ -42,7 +42,7 @@ public class Background extends JFrame implements ConstantValues, GraphicsListen
 			System.err.println("Failed to load sprite.");
 		}
 		
-		ObjectCollection.getRenderer().addGraphicsListener(this, RenderLayer.BACKGROUND1);
+		ObjectCollection.getMainLoop().addGraphicsListener(this, RenderLayer.BACKGROUND1);
 	}
 	
 	@Override

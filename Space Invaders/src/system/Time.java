@@ -12,12 +12,13 @@ public class Time implements EarlyUpdateListener
 	public Time()
 	{
 		timeInstance = this;
-		ObjectCollection.getRenderer().addEarlyUpdateListener(timeInstance);
+		ObjectCollection.getMainLoop().addEarlyUpdateListener(timeInstance);
 	}
 	
 	@Override
 	public void earlyUpdate()
 	{
+		//System.out.println(System.currentTimeMillis() + " - " + timestamp);
 		deltaTime = (int) (System.currentTimeMillis() - timestamp);
 		timestamp = System.currentTimeMillis();
 	}

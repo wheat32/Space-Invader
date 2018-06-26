@@ -4,29 +4,34 @@ import java.util.ArrayList;
 
 import entities.Entity;
 import entities.players.SpaceShip;
-import input.KeyInputManagement;
+import updates.CollisionListener;
+import updates.EarlyUpdateListener;
+import updates.GraphicsListener;
 import updates.LateUpdateListener;
+import updates.UpdateListener;
 
-public class EntityManagement implements ConstantValues, LateUpdateListener
+public class EntityManagement implements ConstantValues, EarlyUpdateListener, LateUpdateListener
 {
 	private static EntityManagement entityManagementInstance;
 	private static ArrayList<Entity> entities = new ArrayList<>();
+	private static ArrayList<Entity> additionList = new ArrayList<>();
 	private static ArrayList<Entity> removalList = new ArrayList<>();
 	
 	public EntityManagement()
 	{
 		entityManagementInstance = this;
-		ObjectCollection.getRenderer().addLateUpdateListener(entityManagementInstance);
+		ObjectCollection.getMainLoop().addLateUpdateListener(entityManagementInstance);
+		ObjectCollection.getMainLoop().addEarlyUpdateListener(entityManagementInstance);
 	}
 	
 	public static void addEntity(Entity entity)
 	{
-		entities.add(entity);
+		additionList.add(entity);
 	}
 	
 	public static void addEntities(ArrayList<Entity> entities)
 	{
-		entities.addAll(entities);
+		additionList.addAll(entities);
 	}
 	
 	public static void removeEntity(Entity entity)
@@ -72,30 +77,6 @@ public class EntityManagement implements ConstantValues, LateUpdateListener
 		return (entities.contains(entity)) ? true : false;
 	}
 	
-	public static void awaitingRespawn()
-	{
-		//Waiting on user input to start game
-		if(KeyInputManagement.fireKeyPressed == true)
-		{
-			shipRespawn();
-			//objColl.getGameManagement().startGame();
-			//ObjectCollection.getGameManagement().setEndCode((short) 0);
-		}
-	}
-	
-	private static void shipRespawn() 
-	{
-		/*if(objColl.getAlienPack() != null)//TODO
-		{
-			objColl.getAlienPack().moveUp(6);
-		}*/
-		
-		/*objColl.setSpaceShip(new SpaceShip(objColl, (short) 20, (short) 20));
-		addEntity(objColl.getSpaceShip());
-		objColl.getSpaceShip().setPosition((Stats.SCREEN_WIDTH/2 - (int)objColl.getSpaceShip().getDimension().width),
-				(Stats.SCREEN_HEIGHT - 60 - (int)objColl.getSpaceShip().getDimension().getHeight()));*///TODO
-	}
-	
 	/**
 	 * <b>Removes all entities from the ArrayList containing the entities.</b>
 	 * @param includeShip - true to remove the SpaceShip, false to leave it
@@ -107,9 +88,19 @@ public class EntityManagement implements ConstantValues, LateUpdateListener
 			//Remove the spaceship if specified by the call
 			if(entity instanceof SpaceShip == true && includeShip == true)
 			{
-				entities.remove(entity);
+				removalList.add(entity);
 				continue;
 			}
+		}
+	}
+	
+	@Override
+	public void earlyUpdate()
+	{
+		if(additionList.isEmpty() == false)
+		{
+			entities.addAll(additionList);
+			additionList.clear();
 		}
 	}
 
@@ -118,13 +109,37 @@ public class EntityManagement implements ConstantValues, LateUpdateListener
 	{
 		if(removalList.isEmpty() == false)
 		{
+			System.out.println("removing " + removalList.size() + " entities");
+			
 			for(Entity entity : removalList)
 			{
 				if(entity != null && entities.contains(entity) == true)
 				{
+					if(entity instanceof EarlyUpdateListener)
+					{
+						ObjectCollection.getMainLoop().removeEarlyUpdateListener((EarlyUpdateListener) entity);
+					}
+					if(entity instanceof CollisionListener)
+					{
+						ObjectCollection.getMainLoop().removeCollisionListener((CollisionListener) entity);
+					}
+					if(entity instanceof UpdateListener)
+					{
+						ObjectCollection.getMainLoop().removeUpdateListener((UpdateListener) entity);
+					}
+					if(entity instanceof LateUpdateListener)
+					{
+						ObjectCollection.getMainLoop().removeLateUpdateListener((LateUpdateListener) entity);
+					}
+					if(entity instanceof GraphicsListener)
+					{
+						ObjectCollection.getMainLoop().removeGraphicsListener(entity);
+					}
 					entities.remove(entity);
 				}
 			}
+			
+			removalList.clear();
 		}
 	}
 }

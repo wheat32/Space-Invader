@@ -4,8 +4,9 @@ import java.awt.Rectangle;
 
 import entities.Entity;
 import system.Options;
+import updates.CollisionListener;
 
-public class Wall
+public class Wall implements CollisionListener
 {
 	private Rectangle dimensions;
 	
@@ -13,6 +14,7 @@ public class Wall
 	{
 		dimensions = new Rectangle((int) (Options.SCREEN_WIDTH*screenDivX1), (int) (Options.SCREEN_HEIGHT*screenDivY1), 
 				(int) (Options.SCREEN_WIDTH*screenDivX2), (int) (Options.SCREEN_HEIGHT*screenDivY2));
+		ObjectCollection.getMainLoop().addCollisionListener(this);
 	}
 
 	public boolean isTouching(Entity e)
@@ -29,10 +31,17 @@ public class Wall
 	
 	public boolean isOutside(Entity e)
 	{
-		return false;//TODO do this method
+		return false;//TODO
 	}
-	
-	public Rectangle getDimensions()
+
+	@Override
+	public void onCollision(CollisionListener o)
+	{
+		//The wall has no behavior for when something hits it. Furthermore, this method is hard-coded not to be called.
+	}
+
+	@Override
+	public Rectangle getCollider()
 	{
 		return dimensions;
 	}

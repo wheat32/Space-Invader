@@ -1,35 +1,13 @@
 package utils;
 
-import core.Renderer;
-import io.DebugPrints;
+import core.MainLoop;
 import menus.MainMenu;
-import spaceBackgrounds.Background;
 
 public final class ObjectCollection
 {
-	private static Background background;
-	private static DebugPrints debugPrints;
 	private static GameManagementUtils gameManagement;
 	private static MainMenu mainMenu;
-	private static Renderer renderer;
-	
-	public static Background getBackground()
-	{
-		if(background == null)
-		{
-			background = new Background();
-		}
-		return background;
-	}
-	
-	public static DebugPrints getDebugPrints()
-	{
-		if(debugPrints == null)
-		{
-			debugPrints = new DebugPrints();
-		}
-		return debugPrints;
-	}
+	private static MainLoop mainLoop;
 	
 	public static GameManagementUtils getGameManagement()
 	{
@@ -49,12 +27,12 @@ public final class ObjectCollection
 		return mainMenu;
 	}
 	
-	public static Renderer getRenderer()
+	public static MainLoop getMainLoop()
 	{
-		if(renderer == null)
+		if(mainLoop == null)
 		{
-			renderer = new Renderer();
+			mainLoop = new MainLoop();
 		}
-		return renderer;
+		return mainLoop;
 	}
 }

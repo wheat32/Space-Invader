@@ -11,11 +11,13 @@ import system.Audio;
 import system.Audio.Sfxs;
 import system.Options;
 import system.Time;
+import updates.CollisionListener;
 import utils.ConstantValues;
 import utils.EntityManagement;
 import utils.ObjectCollection;
+import utils.Wall;
 
-public class SpaceMine extends Projectile implements ConstantValues
+public class SpaceMine extends Projectile implements ConstantValues, CollisionListener
 {
 	private BufferedImage image;
 	private boolean blowingUp = false;
@@ -23,11 +25,10 @@ public class SpaceMine extends Projectile implements ConstantValues
 
 	public SpaceMine(Entity target, Entity origin, float screenDivX, float screenDivY)
 	{
-		super(target, screenDivX, screenDivY, RenderLayer.SPRITE2, origin.entityFaction);
+		super(target, screenDivX, screenDivY, new Sprite(SPACEMINESHEET, SPACE_MINE_COUNT), RenderLayer.SPRITE2, origin.entityFaction);
 		super.setHealth(300);
-		
-		sprite = new Sprite(SPACEMINESHEET, SPACE_MINE_COUNT);
 		active = 4;
+		ObjectCollection.getMainLoop().addCollisionListener(this);
 	}
 
 	@Override
@@ -72,83 +73,76 @@ public class SpaceMine extends Projectile implements ConstantValues
 
 
 	@Override
-	public boolean inCollision()
+	public void onCollision(CollisionListener o)
 	{
-		if(ObjectCollection.getGameManagement().getWall().isOutside(this) == true && blowingUp == false)
+		if(o instanceof Wall)
 		{
-			EntityManagement.removeEntity(this);
-			return true;
+			if(((Wall) o).isOutside(this) == true && blowingUp == false)
+			{
+				EntityManagement.removeEntity(this);
+				return;
+			}
 		}
 		
-		for(Entity e : EntityManagement.getEntities())
+		if(o instanceof Entity)
 		{
+			Entity e = (Entity) o;
+			
 			if(e.entityFaction != EntityFaction.FRIENDLY)
 			{
-				continue;
+				return;
 			}
 			
 			if(e instanceof LaserCannon && blowingUp == false)
 			{
-				LaserCannon m = (LaserCannon) e;
-				
-				if(this.getBounds().intersects(m.getBounds()) == true)
-				{
-					currHealth -= 100;
-					Audio.playSound(Sfxs.Hit);
-					return true;
-				}
+				currHealth -= 100;
+				Audio.playSound(Sfxs.Hit);
+				return;
 			}
-			else if(e instanceof SpaceShip)
+			if(e instanceof SpaceShip)
 			{
 				SpaceShip ss = (SpaceShip) e;
 				
-				if(this.getBounds().intersects(ss.getBounds()) == true)
+				if(blowingUp == false)
 				{
-					if(blowingUp == false)
+					blowUp();
+				}
+				else
+				{
+					if(ss.getRx() - this.getRx() >= 0 && ss.getRy() - this.ry >= 0)//top left point on ship
 					{
-						blowUp();
+						if(image.getRGB((int) (ss.getRx() - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
+						{
+							EntityManagement.removeEntity(this);
+							return;
+						}
 					}
-					else
+					else if(ss.getRx() + ss.getDimension().width - this.rx >= 0 && ss.getRy() - this.ry >= 0)//top right point on ship
 					{
-						if(ss.getRx() - this.getRx() >= 0 && ss.getRy() - this.ry >= 0)//top left point on ship
+						if(image.getRGB((int) (ss.getRx() + ss.getDimension().width - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
 						{
-							if(image.getRGB((int) (ss.getRx() - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
-							{
-								EntityManagement.removeEntity(this);
-								return true;
-							}
+							EntityManagement.removeEntity(this);
+							return;
 						}
-						else if(ss.getRx() + ss.getDimension().width - this.rx >= 0 && ss.getRy() - this.ry >= 0)//top right point on ship
+					}
+					else if(ss.getRx() - this.rx >= 0 && ss.getRy() + ss.getDimension().height - this.ry >= 0)//bottom left point on ship
+					{
+						if(image.getRGB((int) (ss.getRx() - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
 						{
-							if(image.getRGB((int) (ss.getRx() + ss.getDimension().width - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
-							{
-								EntityManagement.removeEntity(this);
-								return true;
-							}
+							EntityManagement.removeEntity(this);
+							return;
 						}
-						else if(ss.getRx() - this.rx >= 0 && ss.getRy() + ss.getDimension().height - this.ry >= 0)//bottom left point on ship
+					}
+					else if(ss.getRx() + ss.getDimension().width - this.rx >= 0 && ss.getRy() + ss.getDimension().height - this.ry >= 0)//bottom right point on ship
+					{
+						if(image.getRGB((int) (ss.getRx() + ss.getDimension().width - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
 						{
-							if(image.getRGB((int) (ss.getRx() - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
-							{
-								EntityManagement.removeEntity(this);
-								return true;
-							}
-						}
-						else if(ss.getRx() + ss.getDimension().width - this.rx >= 0 && ss.getRy() + ss.getDimension().height - this.ry >= 0)//bottom right point on ship
-						{
-							if(image.getRGB((int) (ss.getRx() + ss.getDimension().width - this.rx), (int) (ss.getRy() - this.ry)) != 0) 
-							{
-								EntityManagement.removeEntity(this);
-								return true;
-							}
+							EntityManagement.removeEntity(this);
 						}
 					}
 				}
 			}
 		}
-		
-		
-		return false;
 	}
 	
 	private void blowUp()

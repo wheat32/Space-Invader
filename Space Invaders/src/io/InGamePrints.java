@@ -31,7 +31,7 @@ public class InGamePrints extends JFrame implements ConstantValues, GraphicsList
 	public InGamePrints(GameMode gameMode)
 	{
 		this.gameMode = gameMode;
-		ObjectCollection.getRenderer().addGraphicsListener(this, RenderLayer.GUI1);
+		ObjectCollection.getMainLoop().addGraphicsListener(this, RenderLayer.GUI1);
 		
 		try
 		{

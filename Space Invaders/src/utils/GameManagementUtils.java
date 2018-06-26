@@ -2,8 +2,6 @@ package utils;
 
 import gameModes.GameMode;
 import gameModes.InfinityMode;
-import system.Audio;
-import system.Audio.Tracks;
 
 public class GameManagementUtils implements ConstantValues
 {
@@ -33,7 +31,6 @@ public class GameManagementUtils implements ConstantValues
 		switch(this.gameType)
 		{
 			case 1://Infinity Mode
-				Audio.openClips(new Tracks[] {Tracks.BGM1, Tracks.BGM3, Tracks.BossBGM1, Tracks.Victory1, Tracks.Victory2});
 				game = new InfinityMode();
 				game.startGame();
 				break;
@@ -85,10 +82,5 @@ public class GameManagementUtils implements ConstantValues
 	public GameStatus getGameStatus()
 	{
 		return (game == null) ? GameStatus.IN_GAME : game.getStatus();
-	}
-	
-	public Wall getWall()
-	{
-		return game.getWall();
 	}
 }

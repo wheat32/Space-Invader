@@ -14,13 +14,14 @@ import system.Audio;
 import system.Audio.Sfxs;
 import system.Options;
 import system.Time;
+import updates.CollisionListener;
 import updates.UpdateListener;
 import utils.ConstantValues;
 import utils.EntityManagement;
 import utils.ObjectCollection;
 import utils.Wall;
 
-public class BossAlien extends Boss implements ConstantValues, UpdateListener
+public class BossAlien extends Boss implements ConstantValues, UpdateListener, CollisionListener
 {
 	private Random rand = new Random();
 	private ShipShield shield;
@@ -35,9 +36,9 @@ public class BossAlien extends Boss implements ConstantValues, UpdateListener
 	
 	public BossAlien(Entity enemy, float screenDivX, float screenDivY)
 	{
-		super(enemy, screenDivX, screenDivY, RenderLayer.SPRITE1, EntityFaction.ALIEN);
-		sprite = new Sprite(BOSSALIENSPRITESHEET1, ALIEN_SPRITE_COUNT);
-		ObjectCollection.getRenderer().addUpdateListener(this);
+		super(enemy, screenDivX, screenDivY, new Sprite(BOSSALIENSPRITESHEET1, ALIEN_SPRITE_COUNT), RenderLayer.SPRITE1, EntityFaction.ALIEN);
+		ObjectCollection.getMainLoop().addUpdateListener(this);
+		ObjectCollection.getMainLoop().addCollisionListener(this);
 		gameMode = ObjectCollection.getGameManagement().getGameMode();
 		
 		setPosition(Options.SCREEN_WIDTH / 2 - dimension.width / 2, dimension.height / 3 * -1);
@@ -189,49 +190,45 @@ public class BossAlien extends Boss implements ConstantValues, UpdateListener
 	}
 
 	@Override
-	public boolean inCollision() 
+	public void onCollision(CollisionListener o) 
 	{
-		if(ObjectCollection.getGameManagement().getWall().isTouching(this) == true)
+		if(o instanceof Wall)
 		{
-			if(this.getDimension().getWidth() + rx >= ObjectCollection.getGameManagement().getWall().getDimensions().width)
+			if(((Wall) o).isTouching(this) == true)
 			{
-				vx = -Math.abs(vx);
-				rx -= rx+this.getDimension().width-Options.SCREEN_WIDTH;
-				return true;
-			}
-			if(rx <= ObjectCollection.getGameManagement().getWall().getDimensions().x)
-			{
-				vx = Math.abs(vx);
-				rx += Math.abs(rx);
-				return true;
-			}
-		}
-
-		for(Entity e : EntityManagement.getEntities())
-		{
-			if(e instanceof LaserCannon)
-			{
-				LaserCannon m = (LaserCannon) e;
-				
-				if(isDead() == false && getBounds().intersects(m.getBounds()) && shield.isRecharging() == true)//Whether the alien is dead or not is evaluated in the draw method
+				if(this.getDimension().getWidth() + rx >= o.getCollider().width)
 				{
-					EntityManagement.removeEntity(m);
-					currHealth -= 100;
-					
-					if(currHealth < 0)
-					{
-						currHealth = 0;
-					}
-					
-					gameMode.score += calculateScore();
-					Audio.playSound(Sfxs.Hit);
-					//System.out.println("Score gained from normal hit: " + calculateScore(false));
-					return true;
+					vx = -Math.abs(vx);
+					rx -= rx+this.getDimension().width-Options.SCREEN_WIDTH;
+	
+				}
+				if(rx <= o.getCollider().x)
+				{
+					vx = Math.abs(vx);
+					rx += Math.abs(rx);
 				}
 			}
 		}
-		
-		return false;
+
+		if(o instanceof LaserCannon)
+		{
+			LaserCannon m = (LaserCannon) o;
+			
+			if(isDead() == false && getBounds().intersects(m.getBounds()) && shield.isRecharging() == true)//Whether the alien is dead or not is evaluated in the draw method
+			{
+				EntityManagement.removeEntity(m);
+				currHealth -= 100;
+				
+				if(currHealth < 0)
+				{
+					currHealth = 0;
+				}
+				
+				gameMode.score += calculateScore();
+				Audio.playSound(Sfxs.Hit);
+				//System.out.println("Score gained from normal hit: " + calculateScore(false));
+			}
+		}
 	}
 	
 	public void setShield(ShipShield shield)

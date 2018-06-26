@@ -7,10 +7,11 @@ import entities.EntityTags.EntityFaction;
 import gameModes.GameMode;
 import system.Options;
 import system.Time;
+import updates.UpdateListener;
 import utils.EntityManagement;
 import utils.ObjectCollection;
 
-public class AlienPack extends Entity
+public class AlienPack extends Entity implements UpdateListener
 {
 	private short aliensInRow;
 	private short aliensInColumn;
@@ -74,6 +75,7 @@ public class AlienPack extends Entity
 		aliensAlive = (short) aliens.size();
 		
 		EntityManagement.addEntities(aliens);
+		ObjectCollection.getMainLoop().addUpdateListener(this);
 	}
 	
 	@Override
@@ -207,26 +209,9 @@ public class AlienPack extends Entity
 		return aliensAlive;
 	}
 
-	/*@Override//TODO make sure this isn't needed
-	public void resize(int oldScreenWidth, int oldScreenHeight)
-	{
-		for(int i = 0; i < rx.length; i++)//adjust rx
-		{
-			float percentageThroughX = rx[i]/oldScreenWidth;
-			rx[i] = Options.SCREEN_WIDTH * percentageThroughX;
-		}
-		
-		for(int i = 0; i < aliens.size(); i++)//adjust ry
-		{
-			float percentageThroughY = aliens.get(i).getRy()/oldScreenHeight;
-			aliens.get(i).setRy(Options.SCREEN_HEIGHT * percentageThroughY);
-		}
-	}*/
-
-
 	@Override
-	public boolean inCollision()
+	public void update()
 	{
-		return false;
+		move();
 	}
 }

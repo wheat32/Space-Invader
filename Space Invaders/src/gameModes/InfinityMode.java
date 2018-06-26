@@ -59,8 +59,7 @@ public class InfinityMode extends GameMode implements ConstantValues
 	{
 		wall = new Wall(0f, 0f, 1.0f, 1.0f);
 		ship = new SpaceShip(0.05f, 0.05f);
-		ship.setDefaultPosition(Options.SCREEN_WIDTH/2 - ship.getDimension().width,
-				(Options.SCREEN_HEIGHT/screenSteps)*(screenSteps-2));
+		ship.setDefaultPosition(0.5f, ((Options.SCREEN_HEIGHT*1.0f/screenSteps)*(1.0f*screenSteps-2))/(1.0f*Options.SCREEN_HEIGHT));
 		EntityManagement.addEntity(ship);
 	}
 	
@@ -108,7 +107,6 @@ public class InfinityMode extends GameMode implements ConstantValues
 				}
 				break;
 			case BIG_WIN:
-				Audio.changeTrack(Tracks.Victory1);
 			default:
 				break;
 		}

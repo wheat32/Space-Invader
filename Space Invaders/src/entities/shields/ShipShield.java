@@ -10,18 +10,19 @@ import java.util.Random;
 import javax.imageio.ImageIO;
 
 import entities.Entity;
+import entities.Sprite;
 import entities.bosses.Boss;
 import entities.projectiles.LaserCannon;
 import system.Audio;
 import system.Audio.Sfxs;
 import system.Options;
 import system.Time;
+import updates.CollisionListener;
 import updates.UpdateListener;
 import utils.ConstantValues;
-import utils.EntityManagement;
 import utils.ObjectCollection;
 
-public class ShipShield extends Entity implements ConstantValues, UpdateListener
+public class ShipShield extends Entity implements ConstantValues, UpdateListener, CollisionListener
 {
 	private Entity entity;
 	private BufferedImage image;
@@ -34,7 +35,7 @@ public class ShipShield extends Entity implements ConstantValues, UpdateListener
 	
 	public ShipShield(Entity entity)
 	{
-		super(RenderLayer.SPRITE2, entity.entityFaction);
+		super(new Sprite(BLUESHIELD, BLUESHIELD_SPRITE_COUNT), RenderLayer.SPRITE2, entity.entityFaction);
 		this.entity = entity;
 		
 		if(entity instanceof Boss == true)
@@ -45,23 +46,9 @@ public class ShipShield extends Entity implements ConstantValues, UpdateListener
 			System.out.println("Shield Max HP: " + super.getMaxHealth());
 		}
 		
-		try
-		{
-			URL url = this.getClass().getClassLoader().getResource(BLUESHIELD);
-			if(url == null)
-			{
-				System.err.println("Image not found.");
-			}
-			image = ImageIO.read(url);
-		}
-		catch(IOException e)
-		{
-			System.err.println("Failed to load image.");
-		}
-		
 		resize(-1, -1);
 		
-		try
+		try//TODO this can probably get moved to the sprite class somehow
 		{
 			URL url = this.getClass().getClassLoader().getResource(SHIELDHIT);
 			if(url == null)
@@ -74,6 +61,9 @@ public class ShipShield extends Entity implements ConstantValues, UpdateListener
 		{
 			System.err.println("Failed to load image.");
 		}
+		
+		ObjectCollection.getMainLoop().addUpdateListener(this);
+		ObjectCollection.getMainLoop().addCollisionListener(this);
 	}
 	
 	public class Hits implements UpdateListener
@@ -97,7 +87,7 @@ public class ShipShield extends Entity implements ConstantValues, UpdateListener
 			timeStamp = -160;//160 ms is how long until fade
 			alpha = 1.0f;
 			move();
-			ObjectCollection.getRenderer().addUpdateListener(this);
+			ObjectCollection.getMainLoop().addUpdateListener(this);
 			//System.out.println(loc + " to radians: " + rotation);
 	    }
 
@@ -160,49 +150,38 @@ public class ShipShield extends Entity implements ConstantValues, UpdateListener
 	}*/
 
 	@Override
-	public boolean inCollision()
+	public void onCollision(CollisionListener o)
 	{
-		for(Entity e : EntityManagement.getEntities())
+		if(o instanceof LaserCannon && recharging == false)
 		{
-			if(e instanceof LaserCannon && recharging == false)
+			try
 			{
-				try
+				LaserCannon m = (LaserCannon) o;
+				
+				if(m.getRx() - this.rx >= 0 && m.getRy() - this.ry >= 0)//top left point on missile
 				{
-					LaserCannon m = (LaserCannon) e;
-					
-					if(m.getBounds().intersects(this.getBounds()) == true)
+					if(image.getRGB((int) (m.getRx() - this.rx), (int) (m.getRy() - this.ry)) != 0) 
 					{
-						if(m.getRx() - this.rx >= 0 && m.getRy() - this.ry >= 0)//top left point on missile
-						{
-							if(image.getRGB((int) (m.getRx() - this.rx), (int) (m.getRy() - this.ry)) != 0) 
-							{
-								float arg = ((m.getRx())/Options.SCREEN_WIDTH - (this.rx + this.getDimension().width/2)/Options.SCREEN_WIDTH);
-								takeHit(m, arg);
-								return true;
-							}
-						}
-						else if(m.getRx() + m.getDimension().width - this.rx >= 0 && m.getRy() - this.ry >= 0)//top right point on missile
-						{
-							if(image.getRGB((int) (m.getRx() + m.getDimension().width - this.rx), (int) (m.getRy() - this.ry)) != 0) 
-							{
-								float arg = ((m.getRx() + m.getDimension().width)/Options.SCREEN_WIDTH - (this.rx + this.getDimension().width/2)/Options.SCREEN_WIDTH);
-								takeHit(m, arg);
-								return true;
-							}
-						}
+						float arg = ((m.getRx())/Options.SCREEN_WIDTH - (this.rx + this.getDimension().width/2)/Options.SCREEN_WIDTH);
+						takeHit(m, arg);
+						return;
 					}
 				}
-				catch(Exception ex)
+				else if(m.getRx() + m.getDimension().width - this.rx >= 0 && m.getRy() - this.ry >= 0)//top right point on missile
 				{
-					System.err.println(ex);
-					return false;
+					if(image.getRGB((int) (m.getRx() + m.getDimension().width - this.rx), (int) (m.getRy() - this.ry)) != 0) 
+					{
+						float arg = ((m.getRx() + m.getDimension().width)/Options.SCREEN_WIDTH - (this.rx + this.getDimension().width/2)/Options.SCREEN_WIDTH);
+						takeHit(m, arg);
+						return;
+					}
 				}
-				
-				return false;
+			}
+			catch(Exception ex)
+			{
+				System.err.println(ex);
 			}
 		}
-		
-		return false;
 	}
 	
 	private void takeHit(LaserCannon m, float arg)

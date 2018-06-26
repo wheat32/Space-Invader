@@ -12,7 +12,7 @@ public class PauseMenu extends JFrame
 	
 	public void displayPauseMenu()
 	{
-		ObjectCollection.getRenderer().stop();
+		ObjectCollection.getMainLoop().stop();
 		
 		String[] options = {"Resume",
 		                    "Options",
@@ -46,6 +46,6 @@ public class PauseMenu extends JFrame
 				break;
 		}
 		
-		ObjectCollection.getRenderer().start();
+		ObjectCollection.getMainLoop().start();
 	}
 }

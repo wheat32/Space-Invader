@@ -10,91 +10,55 @@ import system.Audio;
 import system.Audio.Sfxs;
 import system.Options;
 import system.Time;
+import updates.CollisionListener;
+import updates.UpdateListener;
 import utils.ConstantValues;
 import utils.EntityManagement;
 import utils.GameManagementUtils.GameStatus;
 import utils.ObjectCollection;
+import utils.Wall;
 
-public class SpaceShip extends Entity implements ConstantValues
+public class SpaceShip extends Entity implements ConstantValues, UpdateListener, CollisionListener
 {
+	private GameMode gameMode;
+	
+	private float defaultPosX, defaultPosY;
+	
 	private final float MAX_VELOCITY = 0.00035f;
 	private final float DELTA_VELOCITY = 0.00003f;
+	
 	private final long FIRING_INTERVAL = 250; //milliseconds
+	private long canFireAt = System.currentTimeMillis();
 	private float reloadSpeed = 0.0018f;
-	private int ammo = 10;
-	private float ammof = 10.0f;
+	private float ammo = 10.0f;
 	private boolean reloading = false;
-	private long lastFired = System.currentTimeMillis();
-	private float defaultPosX, defaultPosY;
-	private boolean movingUp = false;
-	private GameMode gameMode;
 	
 	public SpaceShip(float screenDivX, float screenDivY)
 	{
-		super(screenDivX, screenDivY, RenderLayer.SPRITE1, EntityFaction.FRIENDLY);
+		super(screenDivX, screenDivY, new Sprite(SHIPSPRITESHEET1, SPACESHIP_SPRITE_COUNT), RenderLayer.SPRITE1, EntityFaction.FRIENDLY);
 		super.setHealth(1);
 		super.damage = 1;
-		sprite = new Sprite(SHIPSPRITESHEET1, SPACESHIP_SPRITE_COUNT);
 		gameMode = ObjectCollection.getGameManagement().getGameMode();
+		ObjectCollection.getMainLoop().addUpdateListener(this);
+		ObjectCollection.getMainLoop().addCollisionListener(this);
 	}
 	
 	@Override
 	public void move() 
 	{
-		int elapsedTime = Time.deltaTime();
-		
-		px = rx/Options.SCREEN_WIDTH + vx * elapsedTime;
+		px = rx/Options.SCREEN_WIDTH + vx * Time.deltaTime();
 		rx = Options.SCREEN_WIDTH*px;
 		py = ry/Options.SCREEN_HEIGHT;
-		//System.out.println("Moving ship: rx: " + rx);
-		if(movingUp == true)
+		//System.out.println("SpaceShip | Moving ship: rx - " + rx + " ry - " + ry);
+		if(ObjectCollection.getGameManagement().getGameStatus() == GameStatus.WIN && ry > this.getDimension().height*-1)
 		{
-			py -= 0.00016f * elapsedTime;
+			py -= 0.00016f * Time.deltaTime();
 			ry = Options.SCREEN_HEIGHT*py;
-			
-			if(ry <= defaultPosY*Options.SCREEN_HEIGHT || gameMode.getStatus() == GameStatus.IN_GAME)
-			{
-				ry = defaultPosY*Options.SCREEN_HEIGHT;
-				movingUp = false;
-			}
-			//System.out.println("movingUp: " + movingUp + " | ry = " + ry + " | py = " + py);
-		}
-		
-		if(ObjectCollection.getGameManagement().getInGame() == false && ry > this.getDimension().height*-1)
-		{
-			vx = 0;
-			py = ry/Options.SCREEN_WIDTH - 0.0005f * elapsedTime;
-			ry = Options.SCREEN_WIDTH*py;
-		}
-		
-		if(ammo == 0)
-		{
-			reloading = true;
-			reloadSpeed = 0.0013f;
-			
-			if(ammof >= 5)
-			{
-				ammo = Math.round(ammof);
-			}
-		}
-		else
-		{
-			reloading = false;
-			reloadSpeed = 0.0018f;
-			ammo = Math.round(ammof);
-		}
-		
-		if(ammof < 10)
-		{
-			ammof += reloadSpeed * elapsedTime;
-		}
-		else if(ammof > 10)
-		{
-			ammof = 10;
+			//System.out.println("SpaceShip | ry = " + ry + " | py = " + py);
 		}
 	}
 
-	public void processKeys() 
+	private void processKeys() 
 	{	
 		if(gameMode.getStatus() != GameStatus.IN_GAME)
 		{
@@ -115,15 +79,18 @@ public class SpaceShip extends Entity implements ConstantValues
 		
 		if(KeyInputManagement.fireKeyPressed == true)
 		{
-			if(System.currentTimeMillis() - lastFired > FIRING_INTERVAL && ammo > 0)
+			if(canFireAt - System.currentTimeMillis() <= 0 && reloading == false)
 			{
-				//System.out.println("Processing fire key.");
-				shoot((byte) 0);
-			}
-			else if(System.currentTimeMillis() - lastFired > FIRING_INTERVAL && ammo == 0)
-			{
-				Audio.playSound(Sfxs.GunOverheat);
-				lastFired = System.currentTimeMillis();
+				if(reloading == false)
+				{
+					shoot((byte) 0);
+				}
+				else
+				{
+					Audio.playSound(Sfxs.GunOverheat);
+					canFireAt = System.currentTimeMillis() + FIRING_INTERVAL;
+				}
+				//System.out.println("Processing fire key.");	
 			}
 		}
 		
@@ -138,7 +105,7 @@ public class SpaceShip extends Entity implements ConstantValues
 				vx += DELTA_VELOCITY*1.5f;
 			}
 			
-			if(vx > -DELTA_VELOCITY*1.5f && vx < DELTA_VELOCITY*1.5f)
+			if(Math.abs(vx) < DELTA_VELOCITY*1.5f)
 			{
 				vx = 0;
 			}
@@ -150,14 +117,34 @@ public class SpaceShip extends Entity implements ConstantValues
 			active = 1;
 		}
 		
-		if(vx < -MAX_VELOCITY)
+		if(Math.abs(vx) > MAX_VELOCITY)
 		{
-			vx = -MAX_VELOCITY;
+			vx = (vx > 0) ? MAX_VELOCITY : -MAX_VELOCITY;
 		}
-		if(vx > MAX_VELOCITY)
+	}
+	
+	private void checkAmmo()
+	{
+		reloading = (ammo == 0) ? true : false;
+		reloadSpeed = (ammo == 0) ? 0.0013f : 0.0018f;
+		
+		if(ammo < 10)
 		{
-			vx = MAX_VELOCITY;
+			ammo += reloadSpeed * Time.deltaTime();
+			
+			if(ammo > 10)
+			{
+				ammo = 10;
+			}
 		}
+	}
+	
+	@Override
+	public void update()
+	{
+		processKeys();
+		move();
+		checkAmmo();
 	}
 	
 	private void shoot(byte type)
@@ -172,67 +159,56 @@ public class SpaceShip extends Entity implements ConstantValues
 				gameMode.totalTimesShot++;
 				gameMode.timesShot++;
 				ammo--;
-				ammof -= 1.0f;
 				vx *= 0.4f;
-				lastFired = System.currentTimeMillis();
+				canFireAt = System.currentTimeMillis() + FIRING_INTERVAL;
 				Audio.playSound(Sfxs.FriendlyShoot1);
 				break;
 		}
 	}
 	
+	public void reset()
+	{
+		this.setPosition(defaultPosX, defaultPosY);
+		resetAmmo();
+	}
+	
 	public void resetAmmo()
 	{
 		ammo = 10;
-		ammof = 10;
-		lastFired = System.currentTimeMillis();
+		canFireAt = System.currentTimeMillis();
 	}
 	
+	/***
+	 * Sets the default position given the percentage across the screen
+	 * @param x - float between 0.0 and 1.0
+	 * @param y - float between 0.0 and 1.0
+	 */
 	public void setDefaultPosition(float x, float y)
 	{
-		defaultPosX = x/Options.SCREEN_WIDTH;
-		defaultPosY = y/Options.SCREEN_HEIGHT;
-	}
-	
-	public void reset()
-	{
-		resetAmmo();
-		
-		if(rx == 0 && ry == 0)
-		{
-			moveUp();
-		}
-		else
-		{
-			setPosition(defaultPosX*Options.SCREEN_WIDTH, defaultPosY*Options.SCREEN_HEIGHT);
-		}
-	}
-	
-	private void moveUp()
-	{
-		setPosition(defaultPosX*Options.SCREEN_WIDTH, Options.SCREEN_HEIGHT+this.getDimension().height);
-		movingUp = true;
+		defaultPosX = (x*Options.SCREEN_WIDTH)-this.dimension.width/2;
+		defaultPosY = (y*Options.SCREEN_HEIGHT)-this.dimension.height/2;
+		//System.out.println("SpaceShip | defaultPosX: " + defaultPosX + " given " + x + " percentage - defaultPosY: " + defaultPosY + " given " + y + " percentage");
 	}
 
 	@Override
-	public boolean inCollision() 
+	public void onCollision(CollisionListener o) 
 	{
-		if(ObjectCollection.getGameManagement().getWall().isTouching(this) == true)
+		if(o instanceof Wall)
 		{
-			if(this.getDimension().getWidth() + rx >= ObjectCollection.getGameManagement().getWall().getDimensions().width)
+			if(((Wall) o).isTouching(this) == true)
 			{
-				vx = 0;
-				rx = (float) (ObjectCollection.getGameManagement().getWall().getDimensions().width - this.getDimension().getWidth());
-				return true;
-			}
-			if(rx <= ObjectCollection.getGameManagement().getWall().getDimensions().x)
-			{
-				vx = 0;
-				rx = 0;
-				return true;
+				if(this.getDimension().getWidth() + rx >= o.getCollider().width)
+				{
+					vx = 0;
+					rx = (float) (o.getCollider().width - this.getDimension().getWidth());
+				}
+				if(rx <= o.getCollider().x)
+				{
+					vx = 0;
+					rx = 0;
+				}
 			}
 		}
-
-		return false;
 	}
 
 	public boolean getReloading()
@@ -240,7 +216,7 @@ public class SpaceShip extends Entity implements ConstantValues
 		return reloading;
 	}
 	
-	public int getAmmo()
+	public float getAmmo()
 	{
 		return ammo;
 	}
@@ -250,7 +226,6 @@ public class SpaceShip extends Entity implements ConstantValues
 	{
 		super.resize(oldScreenWidth, oldScreenHeight);
 		
-		setDefaultPosition(Options.SCREEN_WIDTH/2 - this.getDimension().width,
-				(Options.SCREEN_HEIGHT/gameMode.getScreenSteps())*(gameMode.getScreenSteps()-2));
+		setDefaultPosition(0.5f, ((Options.SCREEN_HEIGHT*1.0f/gameMode.getScreenSteps())*(1.0f*gameMode.getScreenSteps()-2)/(1.0f*Options.SCREEN_HEIGHT)));
 	}
 }

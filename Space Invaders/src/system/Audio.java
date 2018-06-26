@@ -17,8 +17,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class Audio
 {
-	private static Clip currIntroClip = null;
-	private static Clip currLoopClip = null;
+	private static Tracks currBGM = null;
 	private static ArrayList<Clip> openBGMClips = new ArrayList<Clip>();
 	
 	private volatile static boolean interruptThread = false;
@@ -54,7 +53,7 @@ public class Audio
 			this.introResID = introResID;
 			this.loopResID = loopResID;
 		}
-	}
+}
 	
 	public static enum Sfxs
 	{
@@ -217,32 +216,35 @@ public class Audio
 	public static void changeTrack(Tracks track)
 	{
 		//Return out if the requested track is already playing
-		if(track.introClip == currIntroClip && track.loopClip == currLoopClip)
+		if(track == currBGM)
 		{
 			return;
 		}
 		
 		interruptThread = true;
 		
-		if(currIntroClip != null)
+		if(currBGM != null)
 		{
-			currIntroClip.stop();
-			currIntroClip.setFramePosition(0);
-		}
-		if(currLoopClip != null)
-		{
-			currLoopClip.stop();
-			currLoopClip.setFramePosition(0);
+			if(currBGM.introClip != null)
+			{
+				currBGM.introClip.stop();
+				currBGM.introClip.setFramePosition(0);
+			}
+			if(currBGM.loopClip != null)
+			{
+				currBGM.loopClip.stop();
+				currBGM.loopClip.setFramePosition(0);
+			}
 		}
 		
 		try
 		{
-			currIntroClip = track.introClip;
-			currIntroClip.addLineListener(lineListener);
-			FloatControl volume = (FloatControl) currIntroClip.getControl(FloatControl.Type.MASTER_GAIN);
+			currBGM = track;
+			currBGM.introClip.addLineListener(lineListener);
+			FloatControl volume = (FloatControl) currBGM.introClip.getControl(FloatControl.Type.MASTER_GAIN);
 			volume.setValue((float) (Math.log(musicVolume)/Math.log(10.0f))*20.0f);
-			currIntroClip.setFramePosition(0);
-			currIntroClip.start();
+			currBGM.introClip.setFramePosition(0);
+			currBGM.introClip.start();
 		}
 		catch(IllegalArgumentException e)
 		{
@@ -258,8 +260,8 @@ public class Audio
 		{		
 			try
 			{
-				currLoopClip = track.loopClip;
-				currLoopClip.addLineListener(lineListener);	
+				currBGM.loopClip = track.loopClip;
+				currBGM.loopClip.addLineListener(lineListener);	
 			}
 			catch(IllegalArgumentException e)
 			{
@@ -275,14 +277,14 @@ public class Audio
 				@Override
 				public void run()
 				{
-					FloatControl volume = (FloatControl) currLoopClip.getControl(FloatControl.Type.MASTER_GAIN);
+					FloatControl volume = (FloatControl) currBGM.loopClip.getControl(FloatControl.Type.MASTER_GAIN);
 					volume.setValue((float) (Math.log(0)/Math.log(10.0f))*20.0f);
-					currLoopClip.start();
-					currLoopClip.loop(Integer.MAX_VALUE);
+					currBGM.loopClip.start();
+					currBGM.loopClip.loop(Integer.MAX_VALUE);
 					
 					//System.out.println("Before loop: " + track.introResID);
-					while((currIntroClip.getFramePosition() + 1200 <=  currIntroClip.getFrameLength() || currIntroClip.getFramePosition() <= 100) 
-							&& currIntroClip.isRunning() == true && interruptThread == false)
+					while((currBGM.introClip.getFramePosition() + 1200 <=  currBGM.introClip.getFrameLength() || currBGM.introClip.getFramePosition() <= 100) 
+							&& currBGM.introClip.isRunning() == true && interruptThread == false)
 					{
 						Thread.yield();
 					}
@@ -296,7 +298,7 @@ public class Audio
 					//System.out.println(currIntroClip.getFramePosition());
 					//System.out.println("Audio: After loop: " + track.introResID);
 					volume.setValue((float) (Math.log(musicVolume)/Math.log(10.0f))*20.0f);
-					currLoopClip.setFramePosition(0);
+					currBGM.loopClip.setFramePosition(0);
 				}
 			};
 			interruptThread = false;
@@ -305,72 +307,36 @@ public class Audio
 		}
 		else
 		{
-			currLoopClip = null;
-			currIntroClip.loop(Integer.MAX_VALUE);
+			currBGM.introClip.loop(Integer.MAX_VALUE);
 		}
-	}
+}
 	
-	public static void outOfFocus()
+	public static void focus(boolean in)
 	{
-		if(outOfFocus == true)
+		if((in == false && outOfFocus == true) || (in == true && outOfFocus == false))
 		{
 			return;
 		}
 		
-		outOfFocus = true;
+		outOfFocus = in;
 		
-		musicVolumeHolder -= 10;
-		
-		if(musicVolumeHolder < -80)
+		if(in == false)
 		{
-			musicVolume = -80;
+			musicVolumeHolder = musicVolume;
+			musicVolume -= 0.1f;
 		}
 		else
 		{
 			musicVolume = musicVolumeHolder;
 		}
-		
-		if(currIntroClip != null)
-		{
-			FloatControl volume = (FloatControl) currIntroClip.getControl(FloatControl.Type.MASTER_GAIN);
-			volume.setValue(musicVolume);
-		}
-		else if(currLoopClip != null)
-		{
-			FloatControl volume = (FloatControl) currLoopClip.getControl(FloatControl.Type.MASTER_GAIN);
-			volume.setValue(musicVolume);
-		}
-	}
-	
-	public static void returnFocus()
-	{
-		if(outOfFocus == false)
-		{
-			return;
-		}
-		
-		outOfFocus = false;
-		
-		musicVolumeHolder += 10;
 
-		if(musicVolumeHolder < -80)
+		if(currBGM != null)
 		{
-			musicVolume = -80;
-		}
-		else
-		{
-			musicVolume = musicVolumeHolder;
-		}
-		
-		if(currIntroClip != null)
-		{
-			FloatControl volume = (FloatControl) currIntroClip.getControl(FloatControl.Type.MASTER_GAIN);
-			volume.setValue(musicVolume);
-		}
-		else if(currLoopClip != null)
-		{
-			FloatControl volume = (FloatControl) currLoopClip.getControl(FloatControl.Type.MASTER_GAIN);
-			volume.setValue(musicVolume);
+			FloatControl volume = (FloatControl) currBGM.introClip.getControl(FloatControl.Type.MASTER_GAIN);
+			volume.setValue((float) (Math.log(musicVolume)/Math.log(10.0f))*20.0f);
+			
+			volume = (FloatControl) currBGM.loopClip.getControl(FloatControl.Type.MASTER_GAIN);
+			volume.setValue((float) (Math.log(musicVolume)/Math.log(10.0f))*20.0f);
 		}
 	}
 	
