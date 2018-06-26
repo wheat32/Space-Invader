@@ -13,12 +13,7 @@
  */
 package org.gagravarr.ogg;
 
-import org.gagravarr.flac.FlacFirstOggPacket;
 import org.gagravarr.ogg.OggStreamIdentifier.OggStreamType.Kind;
-import org.gagravarr.opus.OpusPacketFactory;
-import org.gagravarr.skeleton.SkeletonPacketFactory;
-import org.gagravarr.speex.SpeexPacketFactory;
-import org.gagravarr.theora.TheoraPacketFactory;
 import org.gagravarr.vorbis.VorbisPacketFactory;
 
 /**
@@ -109,9 +104,6 @@ public class OggStreamIdentifier {
        } else {
            if (p.getData() != null && p.getData().length > 10) {
                // Is it a Metadata related stream?
-               if (SkeletonPacketFactory.isSkeletonStream(p)) {
-                   return SKELETON;
-               }
                if (isAnnodex2Stream(p)) {
                    return SKELETON;
                }
@@ -127,27 +119,12 @@ public class OggStreamIdentifier {
                    // Vorbis Audio stream
                    return OGG_VORBIS;
                }
-               if (SpeexPacketFactory.isSpeexStream(p)) {
-                   // Speex Audio stream
-                   return SPEEX_AUDIO;
-               }
-               if (OpusPacketFactory.isOpusStream(p)) {
-                   // Opus Audio stream
-                   return OPUS_AUDIO;
-               }
-               if (FlacFirstOggPacket.isFlacStream(p)) {
-                   // FLAC-in-Ogg Audio stream
-                   return OGG_FLAC;
-               }
                if (isOggPCMStream(p)) {
                    // PCM-in-Ogg Audio stream
                    return OGG_PCM;
                }
 
                // Is it a video stream?
-               if (TheoraPacketFactory.isTheoraStream(p)) {
-                   return THEORA_VIDEO;
-               }
                if (isDaalaStream(p)) {
                    return DAALA_VIDEO;
                }

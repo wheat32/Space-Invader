@@ -11,8 +11,8 @@ import system.Options;
 
 public class Renderer extends JFrame
 {
-	private static final long serialVersionUID = -3434844351887741953L;
-	
+	private static final long serialVersionUID = 1L;
+
 	private MainLoop mainLoop;
 	
 	private Canvas canvas;

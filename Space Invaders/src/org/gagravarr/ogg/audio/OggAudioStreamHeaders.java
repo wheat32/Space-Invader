@@ -13,17 +13,11 @@
  */
 package org.gagravarr.ogg.audio;
 
-import org.gagravarr.flac.FlacFirstOggPacket;
-import org.gagravarr.flac.FlacTags;
 import org.gagravarr.ogg.OggPacket;
 import org.gagravarr.ogg.OggStreamAudioData;
 import org.gagravarr.ogg.OggStreamIdentifier;
 import org.gagravarr.ogg.OggStreamIdentifier.OggStreamType;
 import org.gagravarr.ogg.OggStreamPacket;
-import org.gagravarr.opus.OpusInfo;
-import org.gagravarr.opus.OpusPacketFactory;
-import org.gagravarr.speex.SpeexInfo;
-import org.gagravarr.speex.SpeexPacketFactory;
 import org.gagravarr.vorbis.VorbisInfo;
 import org.gagravarr.vorbis.VorbisPacketFactory;
 
@@ -60,22 +54,6 @@ public class OggAudioStreamHeaders implements OggAudioHeaders {
                         OggStreamIdentifier.OGG_VORBIS,
                         (VorbisInfo)VorbisPacketFactory.create(firstPacket));
             }
-            if (SpeexPacketFactory.isSpeexStream(firstPacket)) {
-                return new OggAudioStreamHeaders(sid, 
-                        OggStreamIdentifier.SPEEX_AUDIO,
-                        (SpeexInfo)SpeexPacketFactory.create(firstPacket));
-            }
-            if (OpusPacketFactory.isOpusStream(firstPacket)) {
-                return new OggAudioStreamHeaders(sid, 
-                        OggStreamIdentifier.OPUS_AUDIO,
-                        (OpusInfo)OpusPacketFactory.create(firstPacket));
-            }
-            if (FlacFirstOggPacket.isFlacStream(firstPacket)) {
-                FlacFirstOggPacket flac = new FlacFirstOggPacket(firstPacket);
-                return new OggAudioStreamHeaders(sid, 
-                        OggStreamIdentifier.OGG_FLAC,
-                        flac.getInfo());
-            }
             throw new IllegalArgumentException("Unsupported stream of type " + OggStreamIdentifier.identifyType(firstPacket));
         } else {
             throw new IllegalArgumentException("May only be called for the first packet in a stream, with data");
@@ -88,10 +66,6 @@ public class OggAudioStreamHeaders implements OggAudioHeaders {
     protected OggStreamPacket createNext(OggPacket packet) {
         if (type == OggStreamIdentifier.OGG_VORBIS) {
             return VorbisPacketFactory.create(packet);
-        } else if (type == OggStreamIdentifier.SPEEX_AUDIO) {
-            return SpeexPacketFactory.create(packet);
-        } else if (type == OggStreamIdentifier.OPUS_AUDIO) {
-            return OpusPacketFactory.create(packet);
         } else if (type == OggStreamIdentifier.OGG_FLAC) {
             // TODO Finish FLAC support
             return null;
@@ -109,7 +83,7 @@ public class OggAudioStreamHeaders implements OggAudioHeaders {
         // TODO Finish the flac support properly
         if (type == OggStreamIdentifier.OGG_FLAC) {
             if (tags == null) {
-                tags = new FlacTags(packet);
+                
                 return true;
             } else {
                 // TODO Finish FLAC support

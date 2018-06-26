@@ -19,8 +19,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.gagravarr.ogg.OggStreamAudioData;
 import org.gagravarr.ogg.OggStreamPacket;
-import org.gagravarr.opus.OpusAudioData;
-import org.gagravarr.opus.OpusInfo;
 
 
 /**
@@ -67,10 +65,6 @@ public class OggAudioStatistics {
         if (lastGranule > 0) {
             long samples = lastGranule - info.getPreSkip();
             double sampleRate = info.getSampleRate();
-            if (info instanceof OpusInfo) {
-                // Opus is a special case - granule *always* runs at 48kHz
-                sampleRate = OpusAudioData.OPUS_GRANULE_RATE;
-            }
             durationSeconds = samples / sampleRate;
         }
     }

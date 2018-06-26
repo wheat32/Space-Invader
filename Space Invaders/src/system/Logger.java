@@ -20,25 +20,28 @@ public class Logger implements Thread.UncaughtExceptionHandler
 	{
 		Runtime.getRuntime().addShutdownHook(shutdownThread);
 		
-		File dir = new File("output");
-		
-		if(dir.exists() == false || dir.isDirectory() == false)
+		if(printToFile == true)
 		{
-			dir.mkdir();
+			File dir = new File("output");
+			
+			if(dir.exists() == false || dir.isDirectory() == false)
+			{
+				dir.mkdir();
+			}
+			
+			outputFile = new File("output/output- " + System.currentTimeMillis() + ".txt");
+			
+			try
+			{
+				fw = new FileWriter(outputFile.getPath());
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
+			
+			bw = new BufferedWriter(fw);
 		}
-		
-		//outputFile = new File("output/output- " + System.currentTimeMillis() + ".txt");
-		
-		//try
-		{
-			//fw = new FileWriter(outputFile.getPath());
-		}
-		//catch (IOException e)
-		{
-			//e.printStackTrace();
-		}
-		
-		//bw = new BufferedWriter(fw);
 	}
 	
 	public static void stdout(Object src, String msg)
