@@ -11,8 +11,8 @@ public class Main
 {
 	public static void main(String[] args) 
 	{
-		Logger.setup();
-		new PrefsHandler().importPrefs();
+		new Logger();
+		new PrefsHandler().importPrefs();//TODO
 		new Time();//this sets up the time
 		new DebugPrints();//this sets up the debug prings
 		new EntityManagement();//this sets up the entity management class

@@ -14,57 +14,62 @@ public class Logger implements Thread.UncaughtExceptionHandler
 	private static BufferedWriter bw = null;
 	
 	private static boolean printToConsole = true;
-	private static boolean printToFile = false;
+	private static boolean printToFile = true;
+	private static boolean onlyPrintErrsToFile = true;
+	
+	public Logger()
+	{
+		Thread.setDefaultUncaughtExceptionHandler(this);
+		setup();
+	}
 	
 	public static void setup()
 	{
 		Runtime.getRuntime().addShutdownHook(shutdownThread);
-		
-		if(printToFile == true)
-		{
-			File dir = new File("output");
-			
-			if(dir.exists() == false || dir.isDirectory() == false)
-			{
-				dir.mkdir();
-			}
-			
-			outputFile = new File("output/output- " + System.currentTimeMillis() + ".txt");
-			
-			try
-			{
-				fw = new FileWriter(outputFile.getPath());
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-			}
-			
-			bw = new BufferedWriter(fw);
-		}
 	}
 	
-	public static void stdout(Object src, String msg)
+	private static void createOutFile()
 	{
-		String premsg = src.toString().substring(6) + " | " + new SimpleDateFormat("HH:mm:ss.SS").format(Calendar.getInstance().getTime()) + " | ";
+		File dir = new File("output");
+		
+		if(dir.exists() == false || dir.isDirectory() == false)
+		{
+			dir.mkdir();
+		}
+		
+		outputFile = new File("output/output-" + System.currentTimeMillis() + ".txt");
+		
+		try
+		{
+			outputFile.createNewFile();
+			fw = new FileWriter(outputFile.getPath());
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		
+		bw = new BufferedWriter(fw);
+	}
+	
+	public static void stdout(Class<?> src, String msg)
+	{
+		String premsg = new SimpleDateFormat("HH:mm:ss.SS").format(Calendar.getInstance().getTime()) + " | " + src.toString().substring(6) + " | ";
 		
 		if(printToConsole == true)
 		{
 			System.out.println(premsg + msg);
 		}
 		
-		if(printToFile == true)
+		if(printToFile == true && onlyPrintErrsToFile == false)
 		{
 			try
 			{
-				if(outputFile.exists() == false)
+				if(outputFile == null || outputFile.exists() == false)
 				{
-					if(outputFile.createNewFile() == false)
-					{
-						System.err.println("Debugger | " + new SimpleDateFormat("HH:mm:ss.SS").format(Calendar.getInstance().getTime()) + " | Failed to create new file.");
-					}
+					createOutFile();
 				}
-				bw.write(premsg + msg);
+				bw.write(premsg + msg + "\n");
 				bw.flush();
 			}
 			catch (IOException e)
@@ -74,9 +79,9 @@ public class Logger implements Thread.UncaughtExceptionHandler
 		}
 	}
 	
-	public static void stderr(Object src, String msg)
+	public static void stderr(Class<?> src, String msg)
 	{
-		String premsg = "ERROR: " + src.toString().substring(6) + " | " + new SimpleDateFormat("HH:mm:ss.SS").format(Calendar.getInstance().getTime()) + " | ";
+		String premsg = "ERROR: " + new SimpleDateFormat("HH:mm:ss.SS").format(Calendar.getInstance().getTime()) + " | " + src.toString().substring(6) + " | ";
 		
 		if(printToConsole == true)
 		{
@@ -87,14 +92,11 @@ public class Logger implements Thread.UncaughtExceptionHandler
 		{
 			try
 			{
-				if(outputFile.exists() == false)
+				if(outputFile == null || outputFile.exists() == false)
 				{
-					if(outputFile.createNewFile() == false)
-					{
-						System.err.println("Debugger | " + new SimpleDateFormat("HH:mm:ss.SS").format(Calendar.getInstance().getTime()) + " | Failed to create new file.");
-					}
+					createOutFile();
 				}
-				bw.write(premsg + msg);
+				bw.write(premsg + msg + "\n");
 				bw.flush();
 			}
 			catch (IOException e)
@@ -104,27 +106,54 @@ public class Logger implements Thread.UncaughtExceptionHandler
 		}
 	}
 	
-	@Override
-	public void uncaughtException(Thread t, Throwable e)
+	public static void exception(Throwable e)
 	{
-		stderr(e.getClass(), "An uncaught exception has occured.");
+		StringBuilder strTrace = new StringBuilder("");
+		
+		strTrace.append("A caught exception has occured.\n\t");
 		
 		if (e.getMessage() != null) 
 		{
-			stderr(e.getClass(), e.getMessage());
+			strTrace.append(e.getMessage() + "\n\t");
 		}
 		
 		if (e.getCause() != null)
 		{
-			stderr(e.getClass(), "Caused by: \n" + e.getCause().toString());
+			strTrace.append("Caused by: \n" + e.getCause().toString() + "\n\t");
 		}
 		
 		StackTraceElement[] trace = e.getStackTrace();
-		StringBuilder strTrace = new StringBuilder("");
 		
 		for(int i = 0; i < trace.length ;i++) 
 		{
-			strTrace.append(trace[i].toString());
+			strTrace.append(trace[i].toString() + "\n\t");
+		}
+		
+		stderr(e.getClass(), strTrace.toString());
+	}
+	
+	@Override
+	public void uncaughtException(Thread t, Throwable e)
+	{
+		StringBuilder strTrace = new StringBuilder("");
+		
+		strTrace.append("An uncaught exception has occured.\n\t");
+		
+		if (e.getMessage() != null) 
+		{
+			strTrace.append(e.getMessage() + "\n\t");
+		}
+		
+		if (e.getCause() != null)
+		{
+			strTrace.append("Caused by: \n" + e.getCause().toString() + "\n\t");
+		}
+		
+		StackTraceElement[] trace = e.getStackTrace();
+		
+		for(int i = 0; i < trace.length ;i++) 
+		{
+			strTrace.append(trace[i].toString() + "\n\t");
 		}
 		
 		stderr(e.getClass(), strTrace.toString());
@@ -135,7 +164,7 @@ public class Logger implements Thread.UncaughtExceptionHandler
 		@Override
 		public void run()
 		{
-			if(printToFile == false)
+			if(printToFile == false || outputFile == null || outputFile.exists() == false)
 			{
 				return;
 			}

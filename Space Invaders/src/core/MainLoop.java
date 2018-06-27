@@ -81,6 +81,7 @@ public class MainLoop implements ComponentListener, KeyListener, MouseListener
 	public void start()
 	{
 		mainLoop.start();
+		Logger.stdout(this.getClass(), "Main loop started.");
 	}
 	
 	public void stop()

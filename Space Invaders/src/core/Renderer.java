@@ -7,6 +7,7 @@ import java.awt.image.BufferStrategy;
 
 import javax.swing.JFrame;
 
+import strings.MainMenuStrs;
 import system.Options;
 
 public class Renderer extends JFrame
@@ -19,7 +20,7 @@ public class Renderer extends JFrame
 	
 	public Renderer(MainLoop mainLoop)
 	{
-		super("Space Invader");
+		super(MainMenuStrs.TITLE);
 		super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		canvas = new Canvas();
 		super.setMinimumSize(new Dimension(640, 480));

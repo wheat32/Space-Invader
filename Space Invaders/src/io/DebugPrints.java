@@ -8,16 +8,12 @@ import java.awt.Graphics2D;
 import system.Options;
 import system.Time;
 import updates.GraphicsListener;
+import utils.ConstantValues;
 import utils.ConstantValues.RenderLayer;
 import utils.ObjectCollection;
 
 public class DebugPrints implements GraphicsListener
 {	
-	public final byte majorRelease = 0;
-	public final String minorRelease = "pre_3";
-	public final short releaseRevisions = 0;
-	public final String buildID = "6.25.18-7";
-	
 	public boolean displayFPS = true;
 	private short second = 0;
 	private short currFPS = 0;
@@ -34,7 +30,8 @@ public class DebugPrints implements GraphicsListener
 		{
 			gfx.setFont(FontManagement.arialNarrow_small);
 			gfx.setColor(Color.LIGHT_GRAY);
-			gfx.drawString(("Ver: " + majorRelease + "." + minorRelease + "." + releaseRevisions + " | " + buildID), 4, Options.SCREEN_HEIGHT-6);
+			gfx.drawString(("Ver: " + ConstantValues.majorRelease + "." + ConstantValues.minorRelease + "." + ConstantValues.releaseRevisions 
+					+ " | " + ConstantValues.buildID), 4, Options.SCREEN_HEIGHT-6);
 		}
 		
 		if(displayFPS == true)

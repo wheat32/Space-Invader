@@ -9,6 +9,7 @@ import java.net.URL;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
+import system.Logger;
 import system.Options;
 import system.Time;
 import updates.GraphicsListener;
@@ -27,20 +28,22 @@ public class Background extends JFrame implements ConstantValues, GraphicsListen
 	
 	public Background()
 	{	
+		URL url = this.getClass().getClassLoader().getResource(SPACEBG1);
+		if(url == null)
+		{
+			throw new NullPointerException("URL for " + SPACEBG1 + " returned null.");
+		}
+		
 		try
 		{
-			URL url = this.getClass().getClassLoader().getResource(SPACEBG1);
-			if(url == null)
-			{
-				System.err.println("Image not found.");
-			}
 			bg1 = ImageIO.read(url);
-			bg2 = bg1;
 		}
-		catch(IOException e)
+		catch (IOException e)
 		{
-			System.err.println("Failed to load sprite.");
+			Logger.exception(e);
 		}
+		
+		bg2 = bg1;
 		
 		ObjectCollection.getMainLoop().addGraphicsListener(this, RenderLayer.BACKGROUND1);
 	}
