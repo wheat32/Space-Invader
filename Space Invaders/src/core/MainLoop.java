@@ -14,6 +14,7 @@ import java.util.ArrayList;
 
 import javax.swing.Timer;
 
+import entities.Entity;
 import input.KeyInputManagement;
 import io.FontManagement;
 import system.Audio;
@@ -179,7 +180,7 @@ public class MainLoop implements ComponentListener, KeyListener, MouseListener
 	{
 		if(REM_collisionListeners.size() > 0)
 		{
-			if(collisionListeners.removeAll(collisionListeners) == false)
+			if(collisionListeners.removeAll(REM_collisionListeners) == false)
 			{
 				Logger.stderr(MainLoop.class, "Error removing the contents of the REM_collisionListeners ArrayList from the earlyUpdateListeners ArrayList.");
 			}
@@ -207,11 +208,23 @@ public class MainLoop implements ComponentListener, KeyListener, MouseListener
 				if(listener2 instanceof Wall)
 				{
 					listener1.onCollision(listener2);
+					continue;
 				}
 				else if(listener1.getCollider().intersects(listener2.getCollider()) == true)
 				{
-					listener1.onCollision(listener2);
-					listener2.onCollision(listener1);
+					if(listener1 instanceof Entity && listener2 instanceof Entity)
+					{
+						if(((Entity) listener1).isDead() == false && ((Entity) listener2).isDead() == false)
+						{
+							listener1.onCollision(listener2);
+							listener2.onCollision(listener1);
+						}
+					}
+					else
+					{
+						listener1.onCollision(listener2);
+						listener2.onCollision(listener1);
+					}
 				}
 			}
 		}

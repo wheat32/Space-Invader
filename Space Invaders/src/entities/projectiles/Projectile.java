@@ -43,8 +43,8 @@ public abstract class Projectile extends Entity
 	protected void renderUseless()
 	{
 		this.setHealth(0);
-		this.setDamage(0);
 		this.acceleration = 0;
 		this.setVelocity(0, 0);
+		this.setPosition(-this.dimension.width, -this.dimension.height);
 	}
 }

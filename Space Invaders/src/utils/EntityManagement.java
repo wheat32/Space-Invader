@@ -107,39 +107,39 @@ public class EntityManagement implements ConstantValues, EarlyUpdateListener, La
 	@Override
 	public void lateUpdate()
 	{
-		if(removalList.isEmpty() == false)
+		if(removalList.isEmpty() == true)
 		{
-			System.out.println("removing " + removalList.size() + " entities");
-			
-			for(Entity entity : removalList)
-			{
-				if(entity != null && entities.contains(entity) == true)
-				{
-					if(entity instanceof EarlyUpdateListener)
-					{
-						ObjectCollection.getMainLoop().removeEarlyUpdateListener((EarlyUpdateListener) entity);
-					}
-					if(entity instanceof CollisionListener)
-					{
-						ObjectCollection.getMainLoop().removeCollisionListener((CollisionListener) entity);
-					}
-					if(entity instanceof UpdateListener)
-					{
-						ObjectCollection.getMainLoop().removeUpdateListener((UpdateListener) entity);
-					}
-					if(entity instanceof LateUpdateListener)
-					{
-						ObjectCollection.getMainLoop().removeLateUpdateListener((LateUpdateListener) entity);
-					}
-					if(entity instanceof GraphicsListener)
-					{
-						ObjectCollection.getMainLoop().removeGraphicsListener(entity);
-					}
-					entities.remove(entity);
-				}
-			}
-			
-			removalList.clear();
+			return;
 		}
+		
+		for(Entity entity : removalList)
+		{
+			if(entity != null && entities.contains(entity) == true)
+			{
+				if(entity instanceof EarlyUpdateListener)
+				{
+					ObjectCollection.getMainLoop().removeEarlyUpdateListener((EarlyUpdateListener) entity);
+				}
+				if(entity instanceof CollisionListener)
+				{
+					ObjectCollection.getMainLoop().removeCollisionListener((CollisionListener) entity);
+				}
+				if(entity instanceof UpdateListener)
+				{
+					ObjectCollection.getMainLoop().removeUpdateListener((UpdateListener) entity);
+				}
+				if(entity instanceof LateUpdateListener)
+				{
+					ObjectCollection.getMainLoop().removeLateUpdateListener((LateUpdateListener) entity);
+				}
+				if(entity instanceof GraphicsListener)
+				{
+					ObjectCollection.getMainLoop().removeGraphicsListener(entity);
+				}
+				entities.remove(entity);
+			}
+		}
+		
+		removalList.clear();
 	}
 }

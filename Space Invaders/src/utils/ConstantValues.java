@@ -5,7 +5,7 @@ public interface ConstantValues
 	public final byte majorRelease = 0;
 	public final String minorRelease = "pre_3";
 	public final short releaseRevisions = 0;
-	public final String buildID = "9-6.27.18";
+	public final String buildID = "10-6.27.18";
 	
 	/**
 	 * Note: Particle layers are always before a sprite layer of the same number. Ex: SPRITE1 is before PARTICLE2 but after PARTICLE1.

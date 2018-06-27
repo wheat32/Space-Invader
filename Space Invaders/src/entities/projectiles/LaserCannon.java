@@ -101,7 +101,7 @@ public class LaserCannon extends Projectile implements ConstantValues, UpdateLis
 						+ "\tMarchingAlien: {" + e.getBounds() + "}");*/
 				EntityManagement.removeEntity(this);
 				gameMode.increaseHits();
-				//this.renderUseless();
+				this.renderUseless();
 			}
 		}
 	}
