@@ -115,11 +115,11 @@ public class InGamePrints extends JFrame implements ConstantValues, GraphicsList
 		gfx.setColor(Color.BLUE);
 		gfx.draw(rect);
 		
-		if(gameMode.getPlayerShip().getAmmo() <= 3)
+		if(gameMode.getPlayerShip().getWeapon().getCurrAmmo() <= 3)
 		{
 			gfx.setColor(Color.RED);
 		}
-		else if(gameMode.getPlayerShip().getAmmo() <= 6)
+		else if(gameMode.getPlayerShip().getWeapon().getCurrAmmo() <= 6)
 		{
 			gfx.setColor(Color.YELLOW);
 		}
@@ -128,7 +128,7 @@ public class InGamePrints extends JFrame implements ConstantValues, GraphicsList
 			gfx.setColor(Color.GREEN);
 		}
 		
-		if(gameMode.getPlayerShip().getReloading() == true)
+		if(gameMode.getPlayerShip().getWeapon().isReloading() == true)
 		{
 			Font smallFont = new Font("Courier New", Font.PLAIN, FontManagement.font.getSize()-6);
 			gfx.setFont(smallFont);
@@ -139,7 +139,7 @@ public class InGamePrints extends JFrame implements ConstantValues, GraphicsList
 		else
 		{
 			gfx.fillRect(rect.getBounds().x+1, rect.getBounds().y+1,
-					(int) ((rect.getBounds().width)/(10.0/gameMode.getPlayerShip().getAmmo())), rect.getBounds().height);
+					(int) ((rect.getBounds().width)/(10.0/gameMode.getPlayerShip().getWeapon().getCurrAmmo())), rect.getBounds().height);
 		}
 		
 		gfx.setFont(oldFont);

@@ -12,7 +12,7 @@ import javax.imageio.ImageIO;
 import entities.Entity;
 import entities.Sprite;
 import entities.bosses.Boss;
-import entities.projectiles.LaserCannon;
+import entities.projectiles.Laser;
 import system.Audio;
 import system.Audio.Sfxs;
 import system.Options;
@@ -152,11 +152,11 @@ public class ShipShield extends Entity implements ConstantValues, UpdateListener
 	@Override
 	public void onCollision(CollisionListener o)
 	{
-		if(o instanceof LaserCannon && recharging == false)
+		if(o instanceof Laser && recharging == false)
 		{
 			try
 			{
-				LaserCannon m = (LaserCannon) o;
+				Laser m = (Laser) o;
 				
 				if(m.getRx() - this.rx >= 0 && m.getRy() - this.ry >= 0)//top left point on missile
 				{
@@ -184,7 +184,7 @@ public class ShipShield extends Entity implements ConstantValues, UpdateListener
 		}
 	}
 	
-	private void takeHit(LaserCannon m, float arg)
+	private void takeHit(Laser m, float arg)
 	{
 		ShipShield.Hits hit = this.new Hits(this, arg);
 

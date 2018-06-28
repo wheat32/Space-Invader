@@ -22,7 +22,7 @@ public class Audio
 	
 	private volatile static boolean interruptThread = false;
 	private static boolean outOfFocus = false;
-	private static float musicVolume = 0.85f;//anywhere between 0-1 for volume
+	private static float musicVolume = 0.8f;//anywhere between 0-1 for volume
 	private static float musicVolumeHolder = musicVolume;
 	private static float sfxVolume = 0.86f;
 	

@@ -7,21 +7,27 @@ import java.awt.Graphics2D;
 
 import system.Options;
 import system.Time;
+import updates.EarlyUpdateListener;
 import updates.GraphicsListener;
 import utils.ConstantValues;
 import utils.ConstantValues.RenderLayer;
 import utils.ObjectCollection;
 
-public class DebugPrints implements GraphicsListener
+public class DebugPrints implements EarlyUpdateListener, GraphicsListener
 {	
 	public boolean displayFPS = true;
 	private short second = 0;
-	private short currFPS = 0;
+	private short currFPS = -1;
 	private short fps = 0;
 	
 	public DebugPrints()
 	{
 		ObjectCollection.getMainLoop().addGraphicsListener(this, RenderLayer.GUI3);
+		
+		if(displayFPS == true)
+		{
+			ObjectCollection.getMainLoop().addEarlyUpdateListener(this);
+		}
 	}
 	
 	private void printGraphics(Graphics2D gfx)
@@ -36,19 +42,6 @@ public class DebugPrints implements GraphicsListener
 		
 		if(displayFPS == true)
 		{
-			if(second/1000 >= 1)
-			{
-				second -= 1000;
-				currFPS = fps;
-				fps = 0;
-				//System.out.println("FPS: " + currFPS);
-			}
-			else
-			{
-				second += Time.deltaTime();
-				fps++;
-			}
-			
 			gfx.setFont(FontManagement.arialNarrow_small.deriveFont(FontManagement.arialNarrow_small.getSize()*0.7f));
 			Color tempColor = gfx.getColor();
 			gfx.setColor(Color.GRAY);
@@ -61,10 +54,27 @@ public class DebugPrints implements GraphicsListener
 			gfx.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.92f));
 			gfx.setColor(Color.GREEN);
 			//Draw the text
-			gfx.drawString(" FPS: " + currFPS + " ", 0, (int) (gfx.getFont().getStringBounds("FPS:??", gfx.getFontRenderContext()).getHeight()*0.96f));
+			gfx.drawString(" FPS: " + ((currFPS != -1) ? currFPS : " ") + " ", 0, (int) (gfx.getFont().getStringBounds("FPS:??", gfx.getFontRenderContext()).getHeight()*0.96f));
 			
 			gfx.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
 			gfx.setColor(tempColor);
+		}
+	}
+	
+	@Override
+	public void earlyUpdate()
+	{
+		if(displayFPS == true)
+		{
+			if(second-1000 >= 1)
+			{
+				second -= 1000;
+				currFPS = fps;
+				fps = 0;
+			}
+
+			second += Time.deltaTime();
+			fps++;
 		}
 	}
 

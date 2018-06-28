@@ -93,7 +93,7 @@ public class SpaceMine extends Projectile implements ConstantValues, CollisionLi
 				return;
 			}
 			
-			if(e instanceof LaserCannon && blowingUp == false)
+			if(e instanceof Laser && blowingUp == false)
 			{
 				currHealth -= 100;
 				Audio.playSound(Sfxs.Hit);

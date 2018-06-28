@@ -14,11 +14,11 @@ import utils.EntityManagement;
 import utils.ObjectCollection;
 import utils.Wall;
 
-public class LaserCannon extends Projectile implements ConstantValues, UpdateListener, CollisionListener
+public class Laser extends Projectile implements ConstantValues, UpdateListener, CollisionListener
 {
 	private GameMode gameMode;
 	
-	public LaserCannon(Entity origin, float screenDivX, float screenDivY)
+	public Laser(Entity origin, float screenDivX, float screenDivY)
 	{
 		super(screenDivX, screenDivY, new Sprite(PROJECTILESPRITESHEET1, MISSILE_SPRITE_COUNT), RenderLayer.SPRITE2, origin.entityFaction);
 		super.damage = 100;
@@ -64,7 +64,7 @@ public class LaserCannon extends Projectile implements ConstantValues, UpdateLis
 		{
 			if(((Wall) o).isOutside(this) == true)
 			{
-				//System.out.println("LaserCannon hit wall");
+				//System.out.println("Laser hit wall");
 				EntityManagement.removeEntity(this);
 				this.renderUseless();
 			}
@@ -96,7 +96,7 @@ public class LaserCannon extends Projectile implements ConstantValues, UpdateLis
 			
 			if(e.entityFaction != EntityFaction.FRIENDLY)
 			{
-				/*System.out.println("LaserCannon | Collided with " + e.toString() + " " + ((MarchingAlien) e).getNumInRow() + "\n" 
+				/*System.out.println("Laser | Collided with " + e.toString() + " " + ((MarchingAlien) e).getNumInRow() + "\n" 
 						+ "\tLaserCannon:   {" + this.getBounds() + "}\n"
 						+ "\tMarchingAlien: {" + e.getBounds() + "}");*/
 				EntityManagement.removeEntity(this);

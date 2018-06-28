@@ -5,7 +5,7 @@ import java.util.Random;
 import entities.Entity;
 import entities.EntityTags.EntityFaction;
 import entities.Sprite;
-import entities.projectiles.LaserCannon;
+import entities.projectiles.Laser;
 import entities.projectiles.SimpleEnemyLaserCannon;
 import entities.projectiles.SpaceMine;
 import entities.shields.ShipShield;
@@ -210,9 +210,9 @@ public class BossAlien extends Boss implements ConstantValues, UpdateListener, C
 			}
 		}
 
-		if(o instanceof LaserCannon)
+		if(o instanceof Laser)
 		{
-			LaserCannon m = (LaserCannon) o;
+			Laser m = (Laser) o;
 			
 			if(isDead() == false && getBounds().intersects(m.getBounds()) && shield.isRecharging() == true)//Whether the alien is dead or not is evaluated in the draw method
 			{

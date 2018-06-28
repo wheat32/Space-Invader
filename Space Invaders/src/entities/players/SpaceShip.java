@@ -3,17 +3,15 @@ package entities.players;
 import entities.Entity;
 import entities.EntityTags.EntityFaction;
 import entities.Sprite;
-import entities.projectiles.LaserCannon;
+import entities.weapons.LaserCannon;
+import entities.weapons.Weapon;
 import gameModes.GameMode;
 import input.KeyInputManagement;
-import system.Audio;
-import system.Audio.Sfxs;
 import system.Options;
 import system.Time;
 import updates.CollisionListener;
 import updates.UpdateListener;
 import utils.ConstantValues;
-import utils.EntityManagement;
 import utils.GameManagementUtils.GameStatus;
 import utils.ObjectCollection;
 import utils.Wall;
@@ -21,17 +19,12 @@ import utils.Wall;
 public class SpaceShip extends Entity implements ConstantValues, UpdateListener, CollisionListener
 {
 	private GameMode gameMode;
+	private Weapon weapon;
 	
 	private float defaultPosX, defaultPosY;
 	
 	private final float MAX_VELOCITY = 0.00035f;
 	private final float DELTA_VELOCITY = 0.00003f;
-	
-	private final long FIRING_INTERVAL = 250; //milliseconds
-	private long canFireAt = System.currentTimeMillis();
-	private float reloadSpeed = 0.0018f;
-	private float ammo = 10.0f;
-	private boolean reloading = false;
 	
 	public SpaceShip(float screenDivX, float screenDivY)
 	{
@@ -39,6 +32,7 @@ public class SpaceShip extends Entity implements ConstantValues, UpdateListener,
 		super.setHealth(1);
 		super.damage = 1;
 		gameMode = ObjectCollection.getGameManagement().getGameMode();
+		weapon = new LaserCannon(this);
 		ObjectCollection.getMainLoop().addUpdateListener(this);
 		ObjectCollection.getMainLoop().addCollisionListener(this);
 	}
@@ -79,19 +73,7 @@ public class SpaceShip extends Entity implements ConstantValues, UpdateListener,
 		
 		if(KeyInputManagement.fireKeyPressed == true)
 		{
-			if(canFireAt - System.currentTimeMillis() <= 0 && reloading == false)
-			{
-				if(reloading == false)
-				{
-					shoot((byte) 0);
-				}
-				else
-				{
-					Audio.playSound(Sfxs.GunOverheat);
-					canFireAt = System.currentTimeMillis() + FIRING_INTERVAL;
-				}
-				//System.out.println("Processing fire key.");	
-			}
+			weapon.fire();
 		}
 		
 		if(KeyInputManagement.leftKeyPressed == false && KeyInputManagement.rightKeyPressed == false)
@@ -123,59 +105,16 @@ public class SpaceShip extends Entity implements ConstantValues, UpdateListener,
 		}
 	}
 	
-	private void checkAmmo()
-	{
-		reloading = (ammo == 0) ? true : false;
-		reloadSpeed = (ammo == 0) ? 0.0013f : 0.0018f;
-		
-		if(ammo < 10)
-		{
-			ammo += reloadSpeed * Time.deltaTime();
-			
-			if(ammo > 10)
-			{
-				ammo = 10;
-			}
-		}
-	}
-	
 	@Override
 	public void update()
 	{
 		processKeys();
 		move();
-		checkAmmo();
-	}
-	
-	private void shoot(byte type)
-	{
-		switch(type)
-		{
-			case 0:
-				LaserCannon laserCannon = new LaserCannon(this, 0.0166f, 0.0333f);
-				laserCannon.setPosition(rx + dimension.width/2 - laserCannon.getDimension().width/2,
-						ry - dimension.height/2);
-				EntityManagement.addEntity(laserCannon);
-				gameMode.totalTimesShot++;
-				gameMode.timesShot++;
-				ammo--;
-				vx *= 0.4f;
-				canFireAt = System.currentTimeMillis() + FIRING_INTERVAL;
-				Audio.playSound(Sfxs.FriendlyShoot1);
-				break;
-		}
 	}
 	
 	public void reset()
 	{
 		this.setPosition(defaultPosX, defaultPosY);
-		resetAmmo();
-	}
-	
-	public void resetAmmo()
-	{
-		ammo = 10;
-		canFireAt = System.currentTimeMillis();
 	}
 	
 	/***
@@ -210,16 +149,6 @@ public class SpaceShip extends Entity implements ConstantValues, UpdateListener,
 			}
 		}
 	}
-
-	public boolean getReloading()
-	{
-		return reloading;
-	}
-	
-	public float getAmmo()
-	{
-		return ammo;
-	}
 	
 	@Override
 	public void resize(int oldScreenWidth, int oldScreenHeight)
@@ -227,5 +156,10 @@ public class SpaceShip extends Entity implements ConstantValues, UpdateListener,
 		super.resize(oldScreenWidth, oldScreenHeight);
 		
 		setDefaultPosition(0.5f, ((Options.SCREEN_HEIGHT*1.0f/gameMode.getScreenSteps())*(1.0f*gameMode.getScreenSteps()-2)/(1.0f*Options.SCREEN_HEIGHT)));
+	}
+
+	public Weapon getWeapon()
+	{
+		return weapon;
 	}
 }
