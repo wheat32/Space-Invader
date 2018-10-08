@@ -1,10 +1,10 @@
 package gameModes;
 
 import java.text.DecimalFormat;
-import java.util.concurrent.TimeUnit;
 
 import entities.players.SpaceShip;
 import io.InGamePrints;
+import system.Time;
 import updates.UpdateListener;
 import utils.EntityManagement;
 import utils.GameManagementUtils;
@@ -15,16 +15,16 @@ import utils.Wall;
 public abstract class GameMode implements UpdateListener
 {
 	//Stats
-	public int level = 0;
-	public long score = 0;
-	public int totalTimesShot = 0;
-	public int totalHits = 0;
-	public int timesShot = 0;
-	public int hits = 0;
-	public int killedAliens = 0;
-	public short lives = 0;
-	public long totalTime = 0;
-	public long roundTime = 0;
+	protected int level = 0;
+	protected long score = 0;
+	protected int totalTimesShot = 0;
+	protected int totalHits = 0;
+	protected int timesShot = 0;
+	protected int hits = 0;
+	protected int kills = 0;
+	protected short lives = 0;
+	protected long totalTime = 0;
+	protected long roundTime = 0;
 	
 	protected boolean inGame = false;
 	protected byte roundType = 0;
@@ -46,6 +46,17 @@ public abstract class GameMode implements UpdateListener
 	protected abstract void resetStats();
 	protected abstract void initEntitySetUp();
 	protected abstract void spawnEntities();
+	public abstract void checkGameStatus();
+	
+	@Override
+	public void update()
+	{
+		if(status == GameStatus.IN_GAME)
+		{
+			roundTime += Time.deltaTime();
+			totalTime += Time.deltaTime();
+		}
+	}
 	
 	public void startGame()
 	{
@@ -58,9 +69,6 @@ public abstract class GameMode implements UpdateListener
 		EntityManagement.removeAllEntities(true);
 		resetStats();
 	}
-	
-	private static DecimalFormat millisecondsFormat = new DecimalFormat("000");
-	private static DecimalFormat secondsFormat = new DecimalFormat("00");
 	
 	public String getAccuracy(boolean total)
 	{
@@ -90,24 +98,26 @@ public abstract class GameMode implements UpdateListener
 		}
 	}
 	
+	public void increaseShots()
+	{
+		timesShot++;
+		totalTimesShot++;
+	}
+	
+	public void increaseKills()
+	{
+		kills++;
+	}
+	
 	public void increaseHits()
 	{
 		totalHits++;
 		hits++;
 	}
 	
-	public String getRoundTimeFormatted()//TODO this doesn't belong here
+	public void increaseScore(int score)
 	{
-		return TimeUnit.MILLISECONDS.toMinutes(roundTime) + ":" + 
-				secondsFormat.format(TimeUnit.MILLISECONDS.toSeconds(roundTime)%60) + ":" + 
-				millisecondsFormat.format(TimeUnit.MILLISECONDS.toMillis(roundTime)%1000);
-	}
-	
-	public String getTotalTimeFormatted()//TODO this doesn't belong here
-	{
-		return TimeUnit.MILLISECONDS.toMinutes(totalTime) + ":" + 
-				secondsFormat.format(TimeUnit.MILLISECONDS.toSeconds(totalTime)%60) + ":" + 
-				millisecondsFormat.format(TimeUnit.MILLISECONDS.toMillis(totalTime)%1000);
+		this.score += score;
 	}
 	
 	public SpaceShip getPlayerShip()
@@ -128,5 +138,60 @@ public abstract class GameMode implements UpdateListener
 	public short getScreenSteps()
 	{
 		return screenSteps;
+	}
+
+	public int getLevel()
+	{
+		return level;
+	}
+
+	public long getScore()
+	{
+		return score;
+	}
+
+	public int getTimesShot()
+	{
+		return timesShot;
+	}
+
+	public short getLives()
+	{
+		return lives;
+	}
+
+	public long getTotalTime()
+	{
+		return totalTime;
+	}
+
+	public long getRoundTime()
+	{
+		return roundTime;
+	}
+
+	public byte getRoundType()
+	{
+		return roundType;
+	}
+
+	public int getTotalTimesShot()
+	{
+		return totalTimesShot;
+	}
+
+	public int getTotalHits()
+	{
+		return totalHits;
+	}
+
+	public int getHits()
+	{
+		return hits;
+	}
+
+	public int getKills()
+	{
+		return kills;
 	}
 }

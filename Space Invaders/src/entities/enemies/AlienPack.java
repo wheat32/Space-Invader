@@ -69,7 +69,7 @@ public class AlienPack extends Entity implements UpdateListener
 			//System.out.println("px[" + i + "] = " + px[i]);
 		}
 		
-		vx = vxDelta*6 + vxDelta * (gameMode.level*0.206f);//Initial vx
+		vx = vxDelta*6 + vxDelta * (gameMode.getLevel()*0.206f);//Initial vx
 		//System.out.println("Initial vx = " + vx + ". vxDelta*4 = " + vxDelta*4.0f);
 		
 		aliensAlive = (short) aliens.size();
@@ -122,7 +122,7 @@ public class AlienPack extends Entity implements UpdateListener
 				}
 				else
 				{
-					vx -= vxDelta + vxLvlMod*gameMode.level;//increase velocity
+					vx -= vxDelta + vxLvlMod*gameMode.getLevel();//increase velocity
 				}
 				nudgeDistance = rx[contactAlien.getNumInRow()] + contactAlien.getDimension().width - Options.SCREEN_WIDTH;
 				//System.out.println("contact alien: num in row: " + contactAlien.getNumInRow() + " - rx: " + rx[contactAlien.getNumInRow()]);
@@ -139,7 +139,7 @@ public class AlienPack extends Entity implements UpdateListener
 				}
 				else
 				{
-					vx += vxDelta + vxLvlMod*gameMode.level;//increase velocity
+					vx += vxDelta + vxLvlMod*gameMode.getLevel();//increase velocity
 				}
 				nudgeDistance = rx[contactAlien.getNumInRow()];
 			}

@@ -9,6 +9,7 @@ public class KeyInputManagement
 	public static boolean leftKeyPressed = false;
 	public static boolean rightKeyPressed = false;
 	public static boolean fireKeyPressed = false;
+	public static boolean shiftKeyPressed = false;
 	public static boolean escKeyPressed = false;
 	
 	private static short[] upKeys = {KeyEvent.VK_UP, KeyEvent.VK_W};
@@ -16,9 +17,10 @@ public class KeyInputManagement
 	private static short[] leftKeys = {KeyEvent.VK_LEFT, KeyEvent.VK_A};
 	private static short[] rightKeys = {KeyEvent.VK_RIGHT, KeyEvent.VK_D};
 	private static short[] fireKeys = {KeyEvent.VK_SPACE, KeyEvent.VK_ENTER};
+	private static short[] shiftKeys = {KeyEvent.VK_SHIFT};
 	private static short[] escKeys = {KeyEvent.VK_ESCAPE};
 	
-	private static short[][] allKeys = {upKeys, downKeys, leftKeys, rightKeys, fireKeys, escKeys};
+	private static short[][] allKeys = {upKeys, downKeys, leftKeys, rightKeys, fireKeys, shiftKeys, escKeys};
 
 	public static void keyPressed(KeyEvent e)
 	{
@@ -46,6 +48,9 @@ public class KeyInputManagement
 							fireKeyPressed = true;
 							return;
 						case 5:
+							shiftKeyPressed = true;
+							return;
+						case 6:
 							escKeyPressed = true;
 							return;
 					}
@@ -80,6 +85,9 @@ public class KeyInputManagement
 							fireKeyPressed = false;
 							return;
 						case 5:
+							shiftKeyPressed = false;
+							return;
+						case 6:
 							escKeyPressed = false;
 							return;
 					}

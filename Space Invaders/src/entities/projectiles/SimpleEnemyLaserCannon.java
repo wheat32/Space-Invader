@@ -55,9 +55,9 @@ public class SimpleEnemyLaserCannon extends Projectile implements ConstantValues
 		Random rand = new Random();
 		short range = 160;
 		
-		if(range - ObjectCollection.getGameManagement().getGameMode().level > 80)
+		if(range - ObjectCollection.getGameManagement().getGameMode().getLevel() > 80)
 		{
-			range -= ObjectCollection.getGameManagement().getGameMode().level * 2;
+			range -= ObjectCollection.getGameManagement().getGameMode().getLevel() * 2;
 		}
 		else
 		{

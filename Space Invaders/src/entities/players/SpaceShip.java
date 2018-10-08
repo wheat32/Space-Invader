@@ -44,9 +44,12 @@ public class SpaceShip extends Entity implements ConstantValues, UpdateListener,
 		rx = Options.SCREEN_WIDTH*px;
 		py = ry/Options.SCREEN_HEIGHT;
 		//System.out.println("SpaceShip | Moving ship: rx - " + rx + " ry - " + ry);
-		if(ObjectCollection.getGameManagement().getGameStatus() == GameStatus.WIN && ry > this.getDimension().height*-1)
+		//After winning a round, float up
+		if((ObjectCollection.getGameManagement().getGameStatus() == GameStatus.WIN || ObjectCollection.getGameManagement().getGameStatus() == GameStatus.BIG_WIN 
+				|| ObjectCollection.getGameManagement().getGameStatus() == GameStatus.POST_ROUND) && ry > this.getDimension().height*-1)
 		{
-			py -= 0.00016f * Time.deltaTime();
+			slowDown();
+			py -= 0.00056f * Time.deltaTime();
 			ry = Options.SCREEN_HEIGHT*py;
 			//System.out.println("SpaceShip | ry = " + ry + " | py = " + py);
 		}
@@ -78,19 +81,7 @@ public class SpaceShip extends Entity implements ConstantValues, UpdateListener,
 		
 		if(KeyInputManagement.leftKeyPressed == false && KeyInputManagement.rightKeyPressed == false)
 		{
-			if(vx > 0)
-			{
-				vx -= DELTA_VELOCITY*1.5f;
-			}
-			else if(vx < 0)
-			{
-				vx += DELTA_VELOCITY*1.5f;
-			}
-			
-			if(Math.abs(vx) < DELTA_VELOCITY*1.5f)
-			{
-				vx = 0;
-			}
+			slowDown();
 			
 			active = 0;
 		}
@@ -112,9 +103,27 @@ public class SpaceShip extends Entity implements ConstantValues, UpdateListener,
 		move();
 	}
 	
+	private void slowDown()
+	{
+		if(vx > 0)
+		{
+			vx -= DELTA_VELOCITY*1.5f;
+		}
+		else if(vx < 0)
+		{
+			vx += DELTA_VELOCITY*1.5f;
+		}
+		
+		if(Math.abs(vx) < DELTA_VELOCITY*1.5f)
+		{
+			vx = 0;
+		}
+	}
+	
 	public void reset()
 	{
 		this.setPosition(defaultPosX, defaultPosY);
+		weapon.reset();
 	}
 	
 	/***

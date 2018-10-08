@@ -10,6 +10,7 @@ import input.KeyInputManagement;
 import io.InGamePrints;
 import system.Audio;
 import system.Audio.Tracks;
+import system.Logger;
 import system.Options;
 import utils.ConstantValues;
 import utils.EntityManagement;
@@ -39,7 +40,7 @@ public class InfinityMode extends GameMode implements ConstantValues
 	{
 		super.totalTimesShot = 0;
 		super.level = 0;
-		super.killedAliens = 0;
+		super.kills = 0;
 		super.score = 0;
 		super.totalHits = 0;
 		super.totalTime = 0;
@@ -69,7 +70,7 @@ public class InfinityMode extends GameMode implements ConstantValues
 		public void run()
 		{
 			status = GameStatus.PRE_ROUND;
-			changeMusic();
+			Audio.changeTrack(Tracks.BGM3);
 			ship.reset();
 			waitForInput();
 			status = GameStatus.IN_GAME;
@@ -77,7 +78,7 @@ public class InfinityMode extends GameMode implements ConstantValues
 			level++;
 			roundType = getNextRoundType();
 			spawnEntities();
-			changeMusic();
+			Audio.changeTrack(Tracks.BGM1);
 		}
 	};
 
@@ -85,31 +86,6 @@ public class InfinityMode extends GameMode implements ConstantValues
 	{
 		//Is this next round a boss?
 		return (byte) ((super.level % ObjectCollection.getGameManagement().getRoundsBetweenBoss() == 0) ? 1 : 0);
-	}
-	
-	private void changeMusic()
-	{
-		switch(status)
-		{
-			case PRE_ROUND:
-				Audio.changeTrack(Tracks.BGM3);
-				break;
-			case IN_GAME:
-				switch(roundType)
-				{
-					default:
-					case 0://Normal wave
-						Audio.changeTrack(Tracks.BGM1);
-						break;
-					case 1://Boss
-						Audio.changeTrack(Tracks.BossBGM1);
-						break;
-				}
-				break;
-			case BIG_WIN:
-			default:
-				break;
-		}
 	}
 	
 	@Override
@@ -138,7 +114,7 @@ public class InfinityMode extends GameMode implements ConstantValues
 	@Override
 	public void startGame()
 	{
-		System.out.println("InfinityMode: startGame called.");
+		Logger.stdout(this.getClass(), "startGame called.");
 		super.startGame();
 		EntityManagement.removeAllEntities(true);
 		gamePrints = new InGamePrints(this);
@@ -147,10 +123,11 @@ public class InfinityMode extends GameMode implements ConstantValues
 		aliens = null;
 		resetStats();
 		initEntitySetUp();
-		new Thread(startNextRound).start();;
+		new Thread(startNextRound).start();
 	}
 	
-	private void checkGameStatus()
+	@Override
+	public void checkGameStatus()
 	{
 		switch(roundType)
 		{
@@ -159,7 +136,7 @@ public class InfinityMode extends GameMode implements ConstantValues
 				{
 					if(((AlienPack) aliens).getAliensAlive() == 0)//Won normal round//TODO make this more universal
 					{
-						status = GameStatus.BIG_WIN;//TODO change this back to WIN
+						status = GameStatus.WIN;//TODO change this back to WIN
 						endRound();
 					}
 				}
@@ -174,23 +151,26 @@ public class InfinityMode extends GameMode implements ConstantValues
 	
 	private void endRound()
 	{
-		System.out.println("InfinityMode: endRound called.");
+		Logger.stdout(this.getClass(), "endRound called.");
 		inGame = false;
 		
 		switch(status)
 		{
 			case WIN:
 				EntityManagement.removeAllEntities(false);
+				Audio.changeTrack(Tracks.Victory2);
+				status = GameStatus.POST_ROUND;
 				break;
 			case LOSE:
+				Audio.changeTrack(Tracks.Lose1);
 				break;
 			case BIG_WIN:
+				Audio.changeTrack(Tracks.Victory1);
+				status = GameStatus.POST_ROUND;
 				break;
 			default:
 				throw new RuntimeException(gameManagement.getGameStatus() + " is an unrecognized end code for Infinity Mode.");
 		}
-		
-		changeMusic();
 	}
 	
 	private void waitForInput()
@@ -218,16 +198,5 @@ public class InfinityMode extends GameMode implements ConstantValues
 				e.printStackTrace();
 			}
 		}
-	}
-
-	@Override
-	public void update()
-	{
-		if(inGame == false)
-		{
-			return;
-		}
-		
-		checkGameStatus();
 	}
 }

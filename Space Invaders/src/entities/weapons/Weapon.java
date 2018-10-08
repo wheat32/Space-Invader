@@ -15,7 +15,9 @@ public abstract class Weapon implements UpdateListener
 	private float maxAmmo;
 	private float currAmmo;
 	private float currAmmoF;
-	private float rechargeSpeed = 1.0f;
+	private float baseRechargeSpeed = 1.0f;
+	private float maxRechargeSpeed = 2.4f;
+	private float parabolicRechargeMod = 0f;
 	private float ammoPerShot = 1.0f;
 	/***
 	 * In milliseconds
@@ -29,15 +31,27 @@ public abstract class Weapon implements UpdateListener
 	private Sfxs overheatSound;
 	
 	private boolean reloading = false;
+	private float currRechargeSpeed;
 	private long canFireAgainAt = 0;
 	
-	protected Weapon(Entity source, float maxAmmo, float rechargeSpeed, float ammoPerShot, short firingInterval, Sfxs shotSound, Sfxs overheatSound)
+	/***
+	 * 
+	 * @param source
+	 * @param maxAmmo
+	 * @param baseRechargeSpeed
+	 * @param ammoPerShot
+	 * @param firingInterval
+	 * @param shotSound
+	 * @param overheatSound
+	 */
+	protected Weapon(Entity source, float maxAmmo, float baseRechargeSpeed, float ammoPerShot, short firingInterval, Sfxs shotSound, Sfxs overheatSound)
 	{
 		this.source = source;
 		this.maxAmmo = maxAmmo;
 		this.currAmmo = maxAmmo;
 		this.currAmmoF = maxAmmo;
-		this.rechargeSpeed = rechargeSpeed;
+		this.baseRechargeSpeed = baseRechargeSpeed;
+		this.currRechargeSpeed = baseRechargeSpeed;
 		this.ammoPerShot = ammoPerShot;
 		this.firingInterval = firingInterval;
 		this.shotSound = shotSound;
@@ -47,18 +61,50 @@ public abstract class Weapon implements UpdateListener
 	
 	/***
 	 * 
+	 * @param source
 	 * @param maxAmmo
-	 * @param rechargeSpeed
+	 * @param baseRechargeSpeed
 	 * @param ammoPerShot
+	 * @param firingInterval
+	 * @param shotSound
+	 * @param overheatSound
 	 * @param integerAmmo
 	 * @param overheats
 	 * @param overheatedReloadMod
 	 * @param cooldownThreshold
 	 */
-	protected Weapon(Entity source, float maxAmmo, float rechargeSpeed, float ammoPerShot, short firingInterval, Sfxs shotSound, Sfxs overheatSound,
+	protected Weapon(Entity source, float maxAmmo, float baseRechargeSpeed, float ammoPerShot, short firingInterval, Sfxs shotSound, Sfxs overheatSound,
 			boolean integerAmmo, boolean overheats, float overheatedReloadMod, float cooldownThreshold)
 	{
-		this(source, maxAmmo, rechargeSpeed, ammoPerShot, firingInterval, shotSound, overheatSound);
+		this(source, maxAmmo, baseRechargeSpeed, ammoPerShot, firingInterval, shotSound, overheatSound);
+		this.integerAmmo = integerAmmo;
+		this.overheats = overheats;
+		this.overheatedReloadMod = overheatedReloadMod;
+		this.cooldownThreshold = cooldownThreshold;
+	}
+	
+	/***
+	 * 
+	 * @param source
+	 * @param maxAmmo
+	 * @param baseRechargeSpeed
+	 * @param maxRechargeSpeed
+	 * @param parabolicRechargeMod
+	 * @param ammoPerShot
+	 * @param firingInterval
+	 * @param shotSound
+	 * @param overheatSound
+	 * @param integerAmmo
+	 * @param overheats
+	 * @param overheatedReloadMod
+	 * @param cooldownThreshold
+	 */
+	protected Weapon(Entity source, float maxAmmo, float baseRechargeSpeed, float maxRechargeSpeed, float parabolicRechargeMod, float ammoPerShot, 
+			short firingInterval, Sfxs shotSound, Sfxs overheatSound, boolean integerAmmo, boolean overheats, float overheatedReloadMod, float cooldownThreshold)
+	{
+		this(source, maxAmmo, baseRechargeSpeed, ammoPerShot, firingInterval, shotSound, overheatSound);
+		this.maxRechargeSpeed = maxRechargeSpeed;
+		this.parabolicRechargeMod = parabolicRechargeMod;
 		this.integerAmmo = integerAmmo;
 		this.overheats = overheats;
 		this.overheatedReloadMod = overheatedReloadMod;
@@ -89,10 +135,12 @@ public abstract class Weapon implements UpdateListener
 	{
 		if(reloading == false && System.currentTimeMillis() >= canFireAgainAt)
 		{
+			//Firing
 			weaponFire();
 			Audio.playSound(shotSound);
 			currAmmo -= ammoPerShot;
 			currAmmoF -= ammoPerShot;
+			currRechargeSpeed = baseRechargeSpeed;
 			
 			if(currAmmo <= 0)
 			{
@@ -114,9 +162,18 @@ public abstract class Weapon implements UpdateListener
 	
 	private void reload()
 	{
+		//Calculate the recharge speed if there is a parabolic modifier
+		currRechargeSpeed += ((reloading == false && parabolicRechargeMod > 0) ? (Time.deltaTime() * 0.00014f * Math.pow(currRechargeSpeed, 2.12f * parabolicRechargeMod)) : 0);
+		
+		if(currRechargeSpeed > maxRechargeSpeed)
+		{
+			currRechargeSpeed = maxRechargeSpeed;
+		}
+		
+		//The actual reloading calculation
 		if(currAmmoF < maxAmmo)
 		{
-			currAmmoF += (rechargeSpeed * Time.deltaTime()) * 0.0026f * ((reloading == true) ? overheatedReloadMod : 1.0f);
+			currAmmoF += (currRechargeSpeed * Time.deltaTime()) * 0.0016f * ((reloading == true) ? overheatedReloadMod : 1.0f);
 			currAmmo = ((integerAmmo == true) ? (int) currAmmoF : currAmmoF);
 		}
 		
@@ -160,14 +217,14 @@ public abstract class Weapon implements UpdateListener
 		this.maxAmmo = maxAmmo;
 	}
 
-	public float getRechargeSpeed()
+	public float getBaseRechargeSpeed()
 	{
-		return rechargeSpeed;
+		return baseRechargeSpeed;
 	}
 
-	public void setRechargeSpeed(float rechargeSpeed)
+	public void setBaseRechargeSpeed(float rechargeSpeed)
 	{
-		this.rechargeSpeed = rechargeSpeed;
+		this.baseRechargeSpeed = rechargeSpeed;
 	}
 
 	public float getAmmoPerShot()

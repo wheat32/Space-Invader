@@ -4,13 +4,15 @@ import entities.Entity;
 import entities.EntityTags.EntityFaction;
 import entities.Sprite;
 import gameModes.GameMode;
+import system.Time;
 import updates.CollisionListener;
+import updates.UpdateListener;
 import utils.ConstantValues;
 import utils.EntityManagement;
 import utils.ObjectCollection;
 import utils.Wall;
 
-public class MarchingAlien extends Entity implements ConstantValues, CollisionListener
+public class MarchingAlien extends Entity implements ConstantValues, CollisionListener, UpdateListener
 {
 	private short numInRow = 0;
 	private AlienPack alienPack;
@@ -21,8 +23,9 @@ public class MarchingAlien extends Entity implements ConstantValues, CollisionLi
 	{
 		super(screenDivX, screenDivY, new Sprite(ALIENSPRITESHEET1, ALIEN_SPRITE_COUNT), RenderLayer.SPRITE1, EntityFaction.ALIEN);
 		this.numInRow = numInRow;
-		timeBonusLength = 25000 + System.currentTimeMillis();//25 seconds
+		timeBonusLength = 25000;//25 seconds
 		gameMode = ObjectCollection.getGameManagement().getGameMode();
+		ObjectCollection.getMainLoop().addUpdateListener(this);
 		ObjectCollection.getMainLoop().addCollisionListener(this);
 	}
 	
@@ -44,15 +47,18 @@ public class MarchingAlien extends Entity implements ConstantValues, CollisionLi
 	
 	public int calculateScore()//TODO fix pausing in game messes up the time bonus
 	{
-		int tempTimeBonus = (int) (System.currentTimeMillis() - timeBonusLength);
-		if(tempTimeBonus > 0)
+		return (int) Math.round(((timeBonusLength > 0) ? timeBonusLength/32.0*gameMode.getLevel()/4.0 : 0) + 100.0*((gameMode.getLevel()/4.0)));
+	}
+	
+	@Override
+	public void update()
+	{
+		if(timeBonusLength <= 0)
 		{
-			return (int) Math.round(tempTimeBonus/32.0*gameMode.level/4.0 + (100.0*(gameMode.level/4.0)));
+			return;
 		}
-		else
-		{
-			return (int) Math.round(100.0*((gameMode.level/4.0)));
-		}
+		
+		timeBonusLength -= Time.deltaTime();
 	}
 
 	@Override
@@ -77,8 +83,8 @@ public class MarchingAlien extends Entity implements ConstantValues, CollisionLi
 			{
 				if(this.reduceHealth(e.getDamage()) == true)
 				{
-					gameMode.killedAliens++;
-					gameMode.score += (calculateScore());
+					gameMode.increaseKills();
+					gameMode.increaseScore(calculateScore());
 					
 					if(alienPack != null)
 					{
@@ -88,6 +94,11 @@ public class MarchingAlien extends Entity implements ConstantValues, CollisionLi
 					{
 						EntityManagement.removeEntity(this);
 					}
+					gameMode.checkGameStatus();
+				}
+				else
+				{
+					gameMode.increaseScore(calculateScore());
 				}
 			}
 		}

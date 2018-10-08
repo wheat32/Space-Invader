@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<changes>
+    <0.3.0>
+        <header>Update 0.3.0 contains the following changes:</header>
+        <change>Roughly 95-98% of the code has been rewritten and split into several new classes (was 15, is now 44).</change>
+		<change>Endless Mode has been renamed to Infinity Mode.</change>
+		<change>The main menu has been completely reworked, adding new submenus, new menu options, and customization options for Infinity Mode.</change>
+		<change>The rendering pipeline has been rewritten and contains optimizations.</change>
+		<change>The foundation for options (including control rebinding, audio mixing, graphic options, etc.) has been added.</change>
+		<change>A new music track was added for exceptional successes in Infinity Mode.</change>
+		<change>A new music track was added which plays before the first round in Infinity Mode.</change>
+		<change>Rewrote many parts of the Audio class and changed how music is played and loaded into memory.</change>
+		<change>Optimized all entities' code.</change>
+		<change>Added capability to save user preferences (such as resolution, refresh rate, and audio volume).</change>
+		<change>Framework for mouse controls has been added.</change>
+		<change>The methodology for rendering has been redone.</change>
+		<change>Rendering in layers have been added for consistent layering on the screen.</change>
+		<change>Volume now scales linearly.</change>
+		<change>The game speed is no longer tied to the frame rate.</change>
+		<change>By default, the game now runs roughly at 60 FPS.</change>
+		<change>Lots of minor bug fixes, timing issues, and graphical issues have been addressed.</change>
+		<footer>(Note: Since nearly all of the code has been rewritten, it is basically a new engine framework. There will be many bugs that need to be 
+		addressed before the port to LWJGL. Also, temporarily, the boss and the UI in the space fights have been removed. They will be added back 
+		with patches/updates.</footer>
+    </0.3.0>
+	<0.3.X>
+		<header>Upcoming update 0.3.X will contain the following changes:</header>
+		<change>Implement a visual changelog.</change>
+		<change>Rewrite how sprites and animations are handled.</change>
+		<change>Functional mouse controls for the menu.</change>
+		<change>Overhauled the functionality of the Wall.</change>
+		<footer>There may be more to add as development continues.</footer>
+	</0.3.X>
+	<0.4>
+		<header>Upcoming update 0.4.0 will contain the following changes:</header>
+		<change>LWJGL will be included and used. This will increase the performance overhead.</change>
+		<change>Engine will take advantage of multithreading.</change>
+		<change>Reintroduce the pause menu.</change>
+		<footer>There may be more to add as development continues. Also, a lot of bugs will likely introduced as the engine will be going through
+		another large rewrite.</footer>
+	</0.4>
+</changes>

@@ -5,7 +5,6 @@ import java.util.Random;
 import entities.Entity;
 import entities.EntityTags.EntityFaction;
 import entities.Sprite;
-import entities.projectiles.Laser;
 import entities.projectiles.SimpleEnemyLaserCannon;
 import entities.projectiles.SpaceMine;
 import entities.shields.ShipShield;
@@ -44,11 +43,11 @@ public class BossAlien extends Boss implements ConstantValues, UpdateListener, C
 		setPosition(Options.SCREEN_WIDTH / 2 - dimension.width / 2, dimension.height / 3 * -1);
 		activate((short) 2);
 		
-		maxHealth = (int) Math.round(3000 + 120 * (gameMode.level * 1.1)) + rand.nextInt(240 + gameMode.level*36);
+		maxHealth = (int) Math.round(3000 + 120 * (gameMode.getLevel() * 1.1)) + rand.nextInt(240 + gameMode.getLevel()*36);
 		currHealth = maxHealth;
 		System.out.println("Boss has " + maxHealth + " health.");
 		
-		vx = 0.00004f + 0.000008f * (gameMode.level/8.0f);
+		vx = 0.00004f + 0.000008f * (gameMode.getLevel()/8.0f);
 
 		if(vx > 0.00106f)
 		{
@@ -67,16 +66,7 @@ public class BossAlien extends Boss implements ConstantValues, UpdateListener, C
 	}
 	
 	private void checkFire()
-	{
-		if(currHealth <= 0)
-		{
-			gameMode.killedAliens++;
-			gameMode.score += calculateScore();
-			EntityManagement.removeEntity(this);
-			//System.out.println("Score gained from death hit: " + calculateScore(true));
-			return;
-		}
-		
+	{		
 		int elapsedTime = Time.deltaTime();
 		
 		//Time calculations
@@ -165,27 +155,13 @@ public class BossAlien extends Boss implements ConstantValues, UpdateListener, C
 	
 	public int calculateScore()
 	{
-		if(currHealth <= 0)
+		if(isDead() == true)
 		{
-			if(isDead() == true)
-			{
-				return (int) Math.round(timeBonusLength/12.6*gameMode.level/2.4 + (442.0*(gameMode.level/2.8)));
-			}
-			else
-			{
-				return (int) Math.round(442.0*((gameMode.level/2.8)));
-			}
+			return (int) Math.round(((timeBonusLength > 0) ? timeBonusLength/12.6*gameMode.getLevel()/2.4 : 0) + 442.0*((gameMode.getLevel()/2.8)));
 		}
 		else
 		{
-			if(timeBonusLength > 0)
-			{
-				return (int) Math.round(timeBonusLength/164.4 * (gameMode.level/6.8) + 10 + (1.8*(gameMode.level/6.4)));
-			}
-			else
-			{
-				return 10 + (int) Math.round(1.8*((gameMode.level/6.4)));
-			}
+			return 10 + (int) Math.round(((timeBonusLength > 0) ? timeBonusLength/164.4 * (gameMode.getLevel()/6.8) : 0) + 1.8*((gameMode.getLevel()/6.4)));
 		}
 	}
 
@@ -210,23 +186,31 @@ public class BossAlien extends Boss implements ConstantValues, UpdateListener, C
 			}
 		}
 
-		if(o instanceof Laser)
+		if(o instanceof Entity)
 		{
-			Laser m = (Laser) o;
+			Entity e = (Entity) o;
 			
-			if(isDead() == false && getBounds().intersects(m.getBounds()) && shield.isRecharging() == true)//Whether the alien is dead or not is evaluated in the draw method
+			if(e.entityFaction == EntityFaction.FRIENDLY)
 			{
-				EntityManagement.removeEntity(m);
-				currHealth -= 100;
-				
-				if(currHealth < 0)
+				if(isDead() == false && shield.isRecharging() == true)
 				{
-					currHealth = 0;
+					currHealth -= e.getDamage();
+					
+					if(currHealth <= 0)
+					{
+						currHealth = 0;
+						gameMode.increaseKills();
+						EntityManagement.removeEntity(this);
+					}
+					else
+					{
+						gameMode.increaseHits();
+					}
+					
+					gameMode.increaseScore(calculateScore());
+					Audio.playSound(Sfxs.Hit);
+					//System.out.println("Score gained from normal hit: " + calculateScore(false));
 				}
-				
-				gameMode.score += calculateScore();
-				Audio.playSound(Sfxs.Hit);
-				//System.out.println("Score gained from normal hit: " + calculateScore(false));
 			}
 		}
 	}

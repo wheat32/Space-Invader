@@ -44,7 +44,7 @@ public class SpaceMine extends Projectile implements ConstantValues, CollisionLi
 		if(isDead() == true && blowingUp == false)
 		{
 			blowUp();
-			ObjectCollection.getGameManagement().getGameMode().score += Math.round(60.0*((ObjectCollection.getGameManagement().getGameMode().level/4.0)));
+			ObjectCollection.getGameManagement().getGameMode().increaseScore((int) Math.round(60.0*((ObjectCollection.getGameManagement().getGameMode().getLevel()/4.0))));
 		}
 		
 		if(blowingUp == true)
